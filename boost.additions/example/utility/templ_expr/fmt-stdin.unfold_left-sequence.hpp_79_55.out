@@ -1,0 +1,101 @@
+-*- mode: compilation; default-directory: "~/prog_dev/boost.org/boost.additions/test/utility/templ_expr/" -*-
+Compilation started at Thu Dec 30 16:30:34
+
+make -k fmt-stdin
+cat fmt-stdin.unfold_left-sequence.hpp_79_55.txt|c:/msys64/tmp/build/clangxx11_0_0/boost.org/boost.additions/test/utility/templ_expr/fmt-stdin.exe
+^^^yes type_expr:
+boost::spirit::x3::alternative
+< boost::spirit::x3::sequence
+  < boost::spirit::x3::real_parser
+    < double
+    , boost::spirit::x3::real_policies
+      < double
+      >
+    >
+  , boost::spirit::x3::uint_parser
+    < unsigned long long
+    , 10
+    , 1
+    , -1
+    >
+  , boost::spirit::x3::uint_parser
+    < unsigned long long
+    , 10
+    , 1
+    , -1
+    >
+  , boost::spirit::x3::literal_char
+    < boost::spirit::char_encoding::standard
+    , boost::spirit::x3::unused_type
+    >
+  , boost::spirit::x3::list
+    < boost::spirit::x3::int_parser
+      < int
+      , 10
+      , 1
+      , -1
+      >
+    , boost::spirit::x3::literal_char
+      < boost::spirit::char_encoding::standard
+      , boost::spirit::x3::unused_type
+      >
+    >
+  , boost::spirit::x3::literal_char
+    < boost::spirit::char_encoding::standard
+    , boost::spirit::x3::unused_type
+    >
+  >
+, boost::spirit::x3::sequence
+  < boost::spirit::x3::uint_parser
+    < unsigned long long
+    , 10
+    , 1
+    , -1
+    >
+  , boost::spirit::x3::uint_parser
+    < unsigned long long
+    , 10
+    , 1
+    , -1
+    >
+  , boost::spirit::x3::literal_char
+    < boost::spirit::char_encoding::standard
+    , boost::spirit::x3::unused_type
+    >
+  , boost::spirit::x3::list
+    < boost::spirit::x3::int_parser
+      < int
+      , 10
+      , 1
+      , -1
+      >
+    , boost::spirit::x3::literal_char
+      < boost::spirit::char_encoding::standard
+      , boost::spirit::x3::unused_type
+      >
+    >
+  , boost::spirit::x3::literal_char
+    < boost::spirit::char_encoding::standard
+    , boost::spirit::x3::unused_type
+    >
+  >
+>::parse
+< __gnu_cxx::__normal_iterator
+  < char*
+  , std::string
+  >
+, boost::spirit::x3::context
+  < boost::spirit::x3::skipper_tag
+  , const boost::spirit::x3::char_class
+    < boost::spirit::char_encoding::standard
+    , boost::spirit::x3::blank_tag
+    >
+  , boost::spirit::x3::unused_type
+  >
+, const boost::spirit::x3::unused_type
+, boost::spirit::x3::std_variant
+  < S1
+  , S2
+  >
+> 
+Compilation finished at Thu Dec 30 16:30:35

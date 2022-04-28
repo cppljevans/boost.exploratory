@@ -1,0 +1,7 @@
+#The following type_id has errors (e.g. ::: instead of ::):
+boost::spirit::x3::alternative<boost::spirit::x3::sequence<boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>, boost::spirit::x3::attr_parser<std::vector<boost::variant<std::vector<boost::variant<int>, std::allocator<boost::variant<int>>>, int>, std::allocator<boost::variant<std:::error_vector<boost::variant<int>, std::allocator<boost::variant<int>>>, int>>>>>, boost::spirit::x3::sequence<boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>, boost::spirit::x3::attr_parser<int>>>::parse_fold<const char *, boost::spirit::x3::unused_type, const boost::spirit::x3::unused_type, boost::variant<std::vector<boost::variant<std::vector<boost::variant<int>, std::allocator<boost::variant<int>>>, int>, std::allocator<boost::variant<
+std::vector
+< boost::variant<int>
+, std::allocator<boost::variant<int>>
+>
+, int>>>, int>, 0, 1>

@@ -1,0 +1,43 @@
+boost::spirit::x3::detail::parse_into_container
+< x3_alternative
+  < x3_sequence
+    < x3_char_unused
+    , boost::spirit::x3::attr_parser
+      < std::vector
+        < boost::variant
+          < std::vector
+            < boost::variant
+              < int32_t
+              >
+            >
+          , int32_t
+          >
+        >
+      >
+    >
+  , x3_sequence
+    < x3_char_unused
+    , boost::spirit::x3::attr_parser
+      < int32_t
+      >
+    >
+  >
+, const char*
+, x3_unused
+, const x3_unused
+, std::vector
+  < boost::variant
+    < std::vector
+      < boost::variant
+        < std::vector
+          < boost::variant
+            < int32_t
+            >
+          >
+        , int32_t
+        >
+      >
+    , int32_t
+    >
+  >
+>

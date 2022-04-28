@@ -1,0 +1,13 @@
+#-*- mode: compilation; default-directory: "~/prog_dev/boost.org/boost.replacements/example/stackoverflow_ast_repr_string/" -*-
+#Compilation started at Sat Dec 25 07:34:28
+#
+#make -k --always-make run
+#clang++ -c -O0 -gdwarf-2 -g3  -std=c++20 -ftemplate-backtrace-limit=0 -fdiagnostics-show-template-tree -fno-elide-type -fmacro-backtrace-limit=0 -fexceptions -fcxx-exceptions   -I/home/evansl/prog_dev/boost.org/boost.replacements/char_set_constexpr -I/home/evansl/prog_dev/github/bitset2/bitset2 -I/home/evansl/prog_dev/c++/ljeLocal/libs/gram_algebra -I/home/evansl/prog_dev/github/Neargye/magic_enum/include -I/home/evansl/prog_dev/c++/ljeLocal/libs/magic_enum -I/home/evansl/prog_dev/boost.org/boost.additions -I/home/evansl/prog_dev/c++/ljeLocal/libs/composite_storage/include  -I/home/evansl/prog_dev/boost.org/boost.replacements/common -I/home/evansl/prog_dev/boost.org/boost.replacements/unfold_left -I/home/evansl/prog_dev/boost.org/boost.replacements/transform_attribute -I/home/evansl/prog_dev/boost.org/boost.additions -I/home/evansl/prog_dev/boost.org/boost_1_76_0  -UWITHOUT_WHITE -UWHITE_AOF -UBRACED_AOF -USTART_AOF -DUSE_DEMANGLE_FMT -DTRANSFORM_ATTRIBUTE_RULE2RHS -UUSE_UNFOLD_LEFT -DUSE_TRANSFORM_ATTRIBUTE_SPECIALIZATION -DSTART_TRANSFORM_ATTRIBUTE -fno-diagnostics-show-option    -ftemplate-depth=200  Edit_2021-05-30.rule_attr_rhs.xform2rhs.cpp -MMD -o c:/msys64/tmp/build/clangxx11_0_0/boost.org/boost.replacements/example/stackoverflow_ast_repr_string/Edit_2021-05-30.rule_attr_rhs.xform2rhs.o 
+is_constructible<boost::variant<std::vector<boost::variant<std::__cxx11::basic_string<char,
+std::char_traits<char>, std::allocator<char>>, braced_usr>,
+std::allocator<boost::variant<std::__cxx11::basic_string<char,
+std::char_traits<char>, std::allocator<char>>, braced_usr>>>,
+std::__cxx11::basic_string<char, std::char_traits<char>,
+std::allocator<char>>>,
+boost::variant<std::__cxx11::basic_string<char,
+std::char_traits<char>, std::allocator<char>>, braced_usr> &>::value

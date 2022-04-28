@@ -1,0 +1,28 @@
+#C:/msys64/home/evansl/prog_dev/boost.org/boost.replacements/unfold_left\boost/spirit/home/x3/operator/sequence.hpp:79:55: note: in instantiation of function template specialization 'boost::spirit::x3::alternative<boost::spirit::x3::sequence<boost::spirit::x3::real_parser<double, boost::spirit::x3::real_policies<double>>, boost::spirit::x3::uint_parser<unsigned long long, 10, 1, -1>, boost::spirit::x3::uint_parser<unsigned long long, 10, 1, -1>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>, boost::spirit::x3::list<boost::spirit::x3::int_parser<int, 10, 1, -1>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>>, boost::spirit::x3::sequence<boost::spirit::x3::uint_parser<unsigned long long, 10, 1, -1>, boost::spirit::x3::uint_parser<unsigned long long, 10, 1, -1>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>, boost::spirit::x3::list<boost::spirit::x3::int_parser<int, 10, 1, -1>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>>>::parse<__gnu_cxx::__normal_iterator<char *, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>, boost::spirit::x3::context<boost::spirit::x3::skipper_tag, const boost::spirit::x3::char_class<boost::spirit::char_encoding::standard, boost::spirit::x3::blank_tag>, boost::spirit::x3::unused_type>, const boost::spirit::x3::unused_type, boost::spirit::x3::std_variant<S1, S2>>' requested here
+#              && this->template sub_parser<Indices>().parse
+#
+boost::spirit::x3::alternative<boost::spirit::x3::sequence<boost::spirit::x3::real_parser<double, boost::spirit::x3::real_policies<double>>, boost::spirit::x3::uint_parser<unsigned long long, 10, 1, -1>, boost::spirit::x3::uint_parser<unsigned long long, 10, 1, -1>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>, boost::spirit::x3::list<boost::spirit::x3::int_parser<int, 10, 1, -1>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>>, boost::spirit::x3::sequence<boost::spirit::x3::uint_parser<unsigned long long, 10, 1, -1>, boost::spirit::x3::uint_parser<unsigned long long, 10, 1, -1>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>, boost::spirit::x3::list<boost::spirit::x3::int_parser<int, 10, 1, -1>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>>, boost::spirit::x3::literal_char<boost::spirit::char_encoding::standard, boost::spirit::x3::unused_type>>>::parse<__gnu_cxx::__normal_iterator<char *, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>>, boost::spirit::x3::context<boost::spirit::x3::skipper_tag, const boost::spirit::x3::char_class<boost::spirit::char_encoding::standard, boost::spirit::x3::blank_tag>, boost::spirit::x3::unused_type>, const boost::spirit::x3::unused_type, boost::spirit::x3::std_variant<S1, S2>>
+#OK=boost::spirit::x3::uint_parser<unsigned long long, 10, 1, -1>
+#OK=boost::spirit::x3::std_variant<S1, S2>
+#OK=char *
+#OK=std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char>>
+#OK=
+#parse
+#< __gnu_cxx::__normal_iterator
+#  < char *
+#  , std::__cxx11::basic_string
+#    < char
+#    , std::char_traits<char>
+#    , std::allocator<char>
+#    >
+#  >
+#, boost::spirit::x3::context
+#  < boost::spirit::x3::skipper_tag
+#  , const boost::spirit::x3::char_class
+#  >
+#>
+#OK=
+#parse
+#< __gnu_cxx::__normal_iterator<char *
+#, std::__cxx11::basic_string<char,std::char_traits<char>,std::allocator<char>>>
+#>

@@ -1,0 +1,257 @@
+######
+#ChangeLog:
+#  2007-02-28.0655
+#    In midst of merging this file with another Makefile
+#    ( the one in */sandbox/variadic-templates/libs/mpl/test ).
+#    Need a more adaptable method for defineing IFLAGS or UP
+#    and need to choose which one to use.
+######
+#include make file for defining compilers and testing preprocessor.
+#InputConditions:
+#  MAIN=<name file to be compiled, must have extention $(CXX.SUFFIX)>
+#  PROJECT.dir=<name directory where output is to go>.
+#  DIR.root=directory of this file, presumably set by Makefile including this one.
+PERLMKLIB=$(HOME)/bin/perlmklib
+STLFILT=$(HOME)/dwnlds/stlfilt/gfilt
+DIR.root:=$(dir $(lastword $(MAKEFILE_LIST)))
+WHAT.dir=$(subst $(DIR.root),,$(PWD))
+tmp.root=c:/msys64
+  #^depends on the OS. With linux, leave unset.
+include $(DIR.root)/default.imk
+boost.root=$(boost.root.1_$(BOOST_ROOT_VERSION)_0)
+###################
+MAIN ?= main
+#BUILD.dir ?= $(PROJECT.dir)/build
+BUILD.dir ?= $(tmp.root)/tmp/build
+RELEASE.dir ?= $(PROJECT.dir)/release
+COMPILE.optim ?=0
+#^Compile optimization flag value.
+DEFAULT_opts-compile = $(DIR.root)/default.opts-compile
+$(MAIN).opts-compile ?= $(DEFAULT_opts-compile)
+###################
+#BOOST.MPL.flags=-DBOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+###################
+
+#{gcc locations
+COMPILER.id:=gxx10_2_0
+PATH.$(COMPILER.id)=/mingw64
+BIN.$(COMPILER.id):=$(PATH.$(COMPILER.id))/bin
+EXE.$(COMPILER.id):=g++
+#}gcc locations
+#{clang locations
+COMPILER.id:=clangxx11_0_0
+PATH.$(COMPILER.id)=/mingw64
+BIN.$(COMPILER.id):=$(PATH.$(COMPILER.version))/bin
+EXE.$(COMPILER.id):=clang++
+#}clang locations
+###################
+#HOW ?= gxx10_2_0
+HOW ?= clangxx11_0_0
+BOOST_ROOT_VERSION?=78
+BUILD_HOW.dir:=$(BUILD.dir)/$(HOW)
+BUILD_HOW_WHAT.dir?=$(BUILD_HOW.dir)/$(WHAT.dir)-$(BOOST_ROOT_VERSION)
+
+#BOOST_MPL_NO_PREPROCESSED_HEADERS=-DBOOST_MPL_CFG_NO_PREPROCESSED_HEADERS
+
+#PP_E.opts=-P
+PP_E.opts=
+COMPILER.gcc.opts.std=-std=c++2a
+#COMPILER.gcc.opts.std=-std=c++17
+#COMPILER.gcc.opts.std=-std=c++14
+#COMPILER.gcc.opts.temp-depth ?= 324
+COMPILER.gcc.opts.temp-depth ?= 200
+#COMPILER.gcc.boost_mpl_cfg_no_full_lambda_support=-DBOOST_MPL_CFG_NO_FULL_LAMBDA_SUPPORT
+COMPILER.gcc.opts.variadic= \
+  $(BOOST_MPL_NO_PREPROCESSED_HEADERS) \
+  $(COMPILER.gcc.boost_mpl_cfg_no_full_lambda_support) \
+  #
+
+#COMPILER.gcc.opts.all= -Wall -Wstrict-overflow -ftemplate-depth-$(COMPILER.gcc.opts.temp-depth) \
+  -O0 -g3 \
+   $(COMPILER.$(HOW).opts.all) \
+  #
+COMPILER.gcc.opts.debug= -O0 -g3
+COMPILER.gcc.opts.debug= -O0 -gdwarf-2 -g3
+  #the above -gdwarf-2 option allows seeing local variables 
+  #in gdb and in current stack frame by just doing:
+  #  (gdb) print varname
+  #where (gdb) is the gdb prompt and varname is the variable name.
+  # the -gdwarf-2 and -g3 in above allows marcro expansion, according to:
+  #   https://sourceware.org/gdb/onlinedocs/gdb/Macros.html
+  #
+COMPILER.gcc.opts.all= \
+   $(COMPILER.gcc.opts.debug) \
+   $(COMPILER.gcc.opts.std) \
+   -Wall \
+   -Wno-deprecated \
+   -Wstrict-overflow \
+   -ftemplate-depth-$(COMPILER.gcc.opts.temp-depth) \
+   -Wno-unused-local-typedefs \
+   -Wno-unused-but-set-variable \
+  #
+#COMPILER.gcc.opts.all= \
+#   $(COMPILER.gcc.opts.std) \
+#   -Wno-deprecated \
+  #
+
+COMPILE.maybe_filt = $(if $(STLFILT),$(STLFILT) -compiler:$(1),$(1))
+#COMPILE.clangxx.flags.libcxx:=-stdlib=libc++ $(COMPILE.clangxx.flags.libcxx)
+#COMPILE.clangxx.flags.libcxx=-cxx-isystem /usr/include/c++/v1
+#COMPILE.clangxx.flags.libcxx:=-cxx-isystem $(PATH.$(HOW))/include/c++/v1 $(COMPILE.clangxx.flags.libcxx)
+
+COMPILE.clangxx.flags.diag=\
+ -ftemplate-backtrace-limit=0\
+ -fdiagnostics-show-template-tree\
+ -fno-elide-type\
+ -fmacro-backtrace-limit=0\
+ -fexceptions\
+ -fcxx-exceptions\
+ #
+#COMPILE.clangxx.flags.std?=-std=c++17
+#COMPILE.clangxx.flags.std?=-std=c++2a
+COMPILE.clangxx.flags.std?=-std=c++20
+COMPILE.clangxx.flags.all=$(COMPILE.clangxx.flags.libcxx) $(COMPILE.clangxx.flags.std) $(COMPILE.clangxx.flags.diag)
+
+FILE.opts_compile := $($(MAIN).opts_compile.file)
+COMPILE.opts_compile.file := $(shell do_if_file.pl rm_comment_repl_nl_blk.pl $(FILE.opts_compile))
+COMPILE.opts= $(COMPILE.opts_compile.file)\
+ $($(MAIN).opts_compile.cmd)\
+ -ftemplate-depth=$(COMPILER.gcc.opts.temp-depth) \
+
+CXX.SUFFIX ?= cpp
+
+#define shorthand for dynamic link arguments for compiler link command.
+#This shorthand was suggested at end of output of the `make install`
+#for gcc, which referenced man pages for ld(1) and ld.so(8).
+define DYNLINK.args
+-Wl,--library-path=$(1) -Wl,-rpath=$(1)
+endef
+
+#Start with empty HOWS.  They will be appended to below, in the HOW.xxx functions.
+HOWS:=
+
+define HOW.gcc
+  HOWS:=$(1) $(HOWS)
+  COMPILER.$(1) =$$(EXE.$(1))
+  COMPILE.$(1) =$$(COMPILER.$(1)) -c -O$(COMPILE.optim) $$(COMPILER.$(1).opts.variadic) $$(COMPILER.gcc.opts.all)
+  LINK.$(1) =$$(COMPILER.$(1)) $(call DYNLINK.args,$$(PATH.$(1))/lib/gcc/x86_64-linux-gnu/8)
+  PREPROCESS.$(1)=$$(COMPILER.$(1)) -c -E $$(COMPILER.$(1).opts.variadic) $$(COMPILER.gcc.opts.all) $$(COMPILER.gcc.opts.std)
+endef
+
+gcc_compilers :=gxx10_2_0
+$(foreach compiler,$(gcc_compilers),$(eval $(call HOW.gcc,$(compiler))))
+
+define HOW.clang
+  HOWS:=$(1) $(HOWS)
+  COMPILER.$(1) =$$(EXE.$(1))
+  COMPILE.$(1) =$$(COMPILER.$(1)) -c $(COMPILER.gcc.opts.debug) $(COMPILE.clangxx.flags.all)\
+    #$(ISYS.$(1)) 
+  LINK.$(1) =$$(COMPILER.$(1)) \
+    $(COMPILE.clangxx.flags.libcxx)\
+    #
+  PREPROCESS.$(1)=$$(COMPILER.$(1)) -c -E $(COMPILE.clangxx.flags.all)
+endef
+
+clang_compilers := clangxx11_0_0
+$(foreach compiler,$(clang_compilers),$(eval $(call HOW.clang,$(compiler))))
+
+.PHONY: o s x Ei E $(MAIN).compile $(MAIN).link $(MAIN).s.dep hows
+
+$(MAIN).compile: $(BUILD_HOW_WHAT.dir)/$(MAIN).o
+$(MAIN).link: $(BUILD_HOW_WHAT.dir)/$(MAIN).exe
+
+$(MAIN).s.dep: $(BUILD_HOW_WHAT.dir)/$(MAIN).s.dep
+
+$(BUILD_HOW_WHAT.dir)/%.o: %.$(CXX.SUFFIX) $(FILE.opts_compile)
+	@install -d `dirname $@`
+	$(COMPILE.$(HOW)) $(INCS) $(DEFINES) $(COMPILE.opts) $*.$(CXX.SUFFIX) -MMD -o $@ 
+	@sed -e 's#^$(@F):#$@:#' $(BUILD_HOW_WHAT.dir)/$*.d> $(BUILD_HOW_WHAT.dir)/$*.o.dep
+	@rm $(BUILD_HOW_WHAT.dir)/$*.d
+
+$(BUILD_HOW_WHAT.dir)/%.s.dep: %.$(CXX.SUFFIX) $(FILE.opts_compile)
+	install -d $(BUILD_HOW_WHAT.dir)
+	$(COMPILE.$(HOW)) $(INCS) $(COMPILE.opts) $*.$(CXX.SUFFIX) -E -MMD -Wp,-o,/dev/null -Wp,-MF,$(BUILD_HOW_WHAT.dir)/$*.d
+	sed -e 's#/boost/# /boost/#' $(BUILD_HOW_WHAT.dir)/$*.d|sort -k 2 -k 2 > $(BUILD_HOW_WHAT.dir)/$*.s.dep
+	rm $(BUILD_HOW_WHAT.dir)/$*.d
+
+$(BUILD_HOW_WHAT.dir)/$(MAIN).E.$(CXX.SUFFIX): $(MAIN).$(CXX.SUFFIX) $($(MAIN).deps) $(FILE.opts_compile)
+	install -d $(BUILD_HOW_WHAT.dir)
+	$(PREPROCESS.$(HOW)) $(INCS) $(COMPILE.opts) $(PP_E.opts) $(MAIN).$(CXX.SUFFIX)> $@
+
+$(BUILD_HOW_WHAT.dir)/$(MAIN).Em.$(CXX.SUFFIX): $(MAIN).$(CXX.SUFFIX) $($(MAIN).deps)
+	install -d $(BUILD_HOW_WHAT.dir)
+	cpp $(INCS) -P $(MAIN).$(CXX.SUFFIX) > $@
+
+$(BUILD_HOW_WHAT.dir)/$(MAIN).Ei.$(CXX.SUFFIX): $(BUILD_HOW_WHAT.dir)/$(MAIN).E.$(CXX.SUFFIX)
+	cat $(BUILD_HOW_WHAT.dir)/$(MAIN).E.$(CXX.SUFFIX) \
+      | indent -bap -bc - \
+      | sed -e 's/} template/}\n\n  template/g' \
+      | sed -e 's/:::/: ::/g' \
+      > $@
+
+$(BUILD_HOW_WHAT.dir)/$(MAIN).Ec.$(CXX.SUFFIX): $(BUILD_HOW_WHAT.dir)/$(MAIN).E.$(CXX.SUFFIX)
+	cat $(BUILD_HOW_WHAT.dir)/$(MAIN).E.$(CXX.SUFFIX) \
+      | clang-format \
+      > $@
+
+$(BUILD_HOW_WHAT.dir)/$(MAIN).Es.$(CXX.SUFFIX): $(BUILD_HOW_WHAT.dir)/$(MAIN).Ei.$(CXX.SUFFIX)
+	cat $(BUILD_HOW_WHAT.dir)/$(MAIN).Ei.$(CXX.SUFFIX)|$(SPLIT.cmd) > $@
+
+__root.src2obj = $(addprefix $(BUILD_HOW_WHAT.dir)/,$(addsuffix .o,$(1)))
+__root.$(MAIN).exe.deps=$(call __root.src2obj,$($(MAIN).exe.deps))
+$(BUILD_HOW_WHAT.dir)/$(MAIN).exe: $(BUILD_HOW_WHAT.dir)/$(MAIN).o $(__root.$(MAIN).exe.deps)
+	$(LINK.$(HOW)) $(LINK.opts) $(BUILD_HOW_WHAT.dir)/$(MAIN).o $(__root.$(MAIN).exe.deps) $($(MAIN).link) -o $@
+show.exe:
+	@echo "show.exe=$(BUILD_HOW_WHAT.dir)/$(MAIN).exe"
+
+o: $(MAIN).compile
+x: $(MAIN).link
+s: $(MAIN).s.dep
+
+Ec: $(BUILD_HOW_WHAT.dir)/$(MAIN).Ec.$(CXX.SUFFIX)
+Em: $(BUILD_HOW_WHAT.dir)/$(MAIN).Em.$(CXX.SUFFIX)
+Es: $(BUILD_HOW_WHAT.dir)/$(MAIN).Es.$(CXX.SUFFIX)
+Ei: $(BUILD_HOW_WHAT.dir)/$(MAIN).Ei.$(CXX.SUFFIX)
+E: $(BUILD_HOW_WHAT.dir)/$(MAIN).E.$(CXX.SUFFIX)
+
+E-out: E
+	cat $(BUILD_HOW_WHAT.dir)/$(MAIN).E.$(CXX.SUFFIX)
+
+run: $(BUILD_HOW_WHAT.dir)/$(MAIN).exe $($(MAIN).args)
+	$(BUILD_HOW_WHAT.dir)/$(MAIN).exe $($(MAIN).args)
+
+run_inp: $(BUILD_HOW_WHAT.dir)/$(MAIN).exe $($(MAIN).args)
+	$(BUILD_HOW_WHAT.dir)/$(MAIN).exe < $($(MAIN).args)
+
+run_out: $(BUILD_HOW_WHAT.dir)/$(MAIN).exe $($(MAIN).args)
+	$(BUILD_HOW_WHAT.dir)/$(MAIN).exe $($(MAIN).args) > $(MAIN).out
+
+run_inp_out: $(BUILD_HOW_WHAT.dir)/$(MAIN).exe $($(MAIN).args)
+	$(BUILD_HOW_WHAT.dir)/$(MAIN).exe < $($(MAIN).args) > $(MAIN).out
+
+SRC.deps := $(BUILD_HOW_WHAT.dir)/$(MAIN).o.dep $(addsuffix .dep,$($(MAIN).exe.deps))
+
+depend:
+	install -d $(RELEASE.dir)
+	perl -I$(PERLMKLIB) $(PERLMKLIB)/merge.d.bak.pl $(RELEASE.dir)/$(MAIN).depend.log $(SRC.deps)
+
+release: depend
+	perl -I$(PERLMKLIB) $(PERLMKLIB)/rcsRevFile.pl $(BUILD_HOW_WHAT.dir):$(CPP.relexcdirs):$(default.relexcdirs)<$(RELEASE.dir)/$(MAIN).depend.log>$(RELEASE.dir)/$(MAIN).release.log
+
+clean:
+	-rm $(BUILD_HOW_WHAT.dir)/$(MAIN).o $(__root.$(MAIN).exe.deps)
+	-rm $(BUILD_HOW_WHAT.dir)/$(MAIN).exe
+
+compile-cmd:
+	@echo $(COMPILE.$(HOW)) $(INCS) $(DEFINES) $(COMPILE.opts)
+
+diff-src:
+	diff $(COMPILER.src.gcc)/$(COMPILER.src.file) $(COMPILER.src.gcc4_4v)/$(COMPILER.src.file)
+
+hows:
+	@echo "HOWS=$(HOWS)"
+
+SRCdeps.inc := yes
+#The above, set to no, is useful in case some files are renamed
+include $(shell ifecho.pl $(SRCdeps.inc) $(SRC.deps) )
+
