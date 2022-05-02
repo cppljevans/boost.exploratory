@@ -2,7 +2,7 @@
 //Format the result of demangle_type.
 //===========
 #include <boost/utility/demangle_type.hpp>
-#include <boost/spirit/home/x3/support/templ_expr/fmt.hpp>
+#include <boost/iostreams/utility/templ_expr/fmt.hpp>
 namespace boost { namespace spirit { namespace x3
 {
 namespace templ_expr

@@ -16,7 +16,8 @@ namespace boost { namespace spirit { namespace x3
 {
 namespace templ_expr
 {
-using namespace boost::xpressive;
+namespace xpr=boost::xpressive;
+using namespace xpr;
 unsigned constexpr indent_width=2
   /**<
    * @brief indentation width
@@ -183,7 +184,9 @@ list_delim
    */
 ; sregex identifier = (+_w)[action_ident(_)]
 ; sregex signed_opt_num=!as_xpr('-') >> +_d
-; sregex integer_literal = skip(_s)(signed_opt_num >> repeat<0,3>(icase((set='u','l'))))[action_ident(_)]
+; sregex ul_literal=icase((set='u','l'))
+; sregex ul_literal0_3=xpr::repeat<0,3>(ul_literal)
+; sregex integer_literal=skip(_s)(signed_opt_num >> ul_literal0_3)[action_ident(_)]
 ; sregex paren_open=skip(_s)(as_xpr('('))[action_ident(_)]
 ; sregex paren_close=skip(_s)(as_xpr(')'))[action_ident(_)]
 ; sregex angle_open=skip(_s)(as_xpr('<'))[action_open(_)] 
