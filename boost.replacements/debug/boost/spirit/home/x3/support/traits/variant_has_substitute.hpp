@@ -10,6 +10,8 @@
 
 #include <boost/spirit/home/x3/support/traits/is_substitute.hpp>
 #include <boost/mpl/find.hpp>
+#pragma push_macro("FILE_SHORT")
+#define FILE_SHORT "traits/variant_has_substitute.hpp"
 
 namespace boost { namespace spirit { namespace x3 { namespace traits
 {
@@ -38,18 +40,52 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
         iter;
 
         typedef mpl::not_<is_same<iter, end>> type;
+        
+        static void trace_tmpl()
+        { auto constexpr class_label="variant_has_substitute_impl<Variant, T>";
+          boost::trace_scope ts(stringify(FILE_SHORT,':',class_label));
+          std::cout<<":Variant=\n"<<demangle_fmt_type<Variant>()<<";\n";
+          std::cout<<":T=\n"<<demangle_fmt_type<T>()<<";\n";
+          std::cout<<":types=\n"<<demangle_fmt_type<types>()<<";\n";
+          using same_iter_1_end=is_same<iter_1,end>;
+          std::cout<<":is_same<iter_1,end>::value="<<same_iter_1_end::value<<";\n";
+          if constexpr (same_iter_1_end::value)
+          { using find_if_types_T=mpl::find_if<types, traits::is_substitute<T, mpl::_1>>;
+            std::cout<<":find_if_types_T=\n"<<demangle_fmt_type<find_if_types_T>()<<";\n";
+            std::cout<<":find_if_types_T::type=\n"<<demangle_fmt_type<typename find_if_types_T::type>()<<";\n";
+          }
+          std::cout<<":result="<<type::value<<";\n";
+        }
     };
 
     template <typename Variant, typename T>
     struct variant_has_substitute
-        : variant_has_substitute_impl<Variant, T>::type {};
+        : variant_has_substitute_impl<Variant, T>::type 
+    {
+        static void trace_tmpl()
+        { variant_has_substitute_impl<Variant, T>::trace_tmpl();
+        }
+    };
 
     template <typename T>
-    struct variant_has_substitute<unused_type, T> : mpl::true_ {};
+    struct variant_has_substitute<unused_type, T> : mpl::true_ 
+    {
+        static void trace_tmpl()
+        { auto constexpr class_label="variant_has_substitute<unused_type, T>";
+          std::cout<<stringify(FILE_SHORT,':',class_label,":mpl::true_");
+        }
+    };
 
     template <typename T>
-    struct variant_has_substitute<unused_type const, T> : mpl::true_ {};
+    struct variant_has_substitute<unused_type const, T> : mpl::true_ 
+    {
+        static void trace_tmpl()
+        { auto constexpr class_label="variant_has_substitute<unused_type const, T>";
+          std::cout<<stringify(FILE_SHORT,':',class_label,":mpl::true_");
+        }
+    };
 
 }}}}
 
+#pragma pop_macro("FILE_SHORT")
 #endif

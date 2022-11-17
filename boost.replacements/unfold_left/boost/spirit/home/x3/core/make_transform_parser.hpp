@@ -8,28 +8,15 @@
 #define BOOST_SPIRIT_X3_MAKE_TRANSFORM_PARSER_JANUARY_01_2022_0853AM
 #ifdef USE_UNFOLD_LEFT
 #include <boost/spirit/home/x3/support/traits/attribute_of.hpp>
+#include <boost/spirit/home/x3/support/traits/transform_attribute.hpp>
+#include <boost/spirit/home/x3/core/parse.hpp>
 
-namespace boost{namespace spirit{namespace x3
+namespace boost{namespace spirit{namespace x3{namespace traits
 {
-  template<typename Parser>
-using attribute_of_default=typename
-  traits::attribute_of
-  < Parser
-  , x3::unused_type
-  >::type
-  ;
-  struct
-transform_parser_id
-  ;
-  template
-  < typename FromParser
-  , typename ToAttribute=attribute_of_default<FromParser>
-  >
-struct transform_parser_attribute
-  ;
   template
   < typename FromParser
   , typename ToAttribute
+  , typename TransformTag=transform_tag_default
   >
 struct transform_parser_attribute
   : x3::parser
@@ -44,27 +31,28 @@ struct transform_parser_attribute
       transform_parser_attribute(FromParser p):from_parser(p){}
       FromParser from_parser;
       using attribute_type = ToAttribute;
-      using to_attribute_type = ToAttribute;
-      using from_attribute_type = attribute_of_default<FromParser>;
       static bool const has_attribute = true;
-      template<typename It, typename Ctx, typename RCtx>
-      bool parse(It& f, It l, Ctx&, RCtx&, ToAttribute& to_attr) const
+      template<typename It, typename Ctx>
+      bool parse(It& f, It l, Ctx&context, ToAttribute& to_attr) const
       {
           using to_attribute_type=ToAttribute;
-          using from_attribute_type=attribute_of_default<FromParser>;
+          using from_attribute_type=typename attribute_of<FromParser,Ctx>::type;
           using transform = 
               traits::transform_attribute
               < to_attribute_type
               , from_attribute_type
-              , transform_parser_id
+              , TransformTag
               >;
+          auto const& skipper = x3::get<skipper_tag>(context);
           auto from_attr=transform::pre(to_attr);
           bool result=
-            x3::phrase_parse(
-              f,
-              l,
-              from_parser, x3::blank,
-              from_attr);
+            x3::phrase_parse
+            ( f
+            , l
+            , from_parser 
+            , skipper
+            , from_attr
+            );
           if(result)
           {
               transform::post(to_attr,from_attr);
@@ -73,49 +61,16 @@ struct transform_parser_attribute
       }
   };
   template
-  < typename FromParser
-  >
-struct transform_parser_attribute
-  < FromParser
-  , attribute_of_default<FromParser>//ToAttribute
-  >
-  : x3::parser
-    < transform_parser_attribute
-      < FromParser
-      , attribute_of_default<FromParser>
-      >
-    >
-  //The is simply a parser identical to FromParser because
-  //the ToAttribute is same as FromParser attribute.
-  {
-      transform_parser_attribute(FromParser p):from_parser(p){}
-      FromParser from_parser;
-      using from_attribute_type = attribute_of_default<FromParser>;
-      using attribute_type = from_attribute_type;
-      static bool const has_attribute = true;
-  
-      template<typename It, typename Ctx, typename RCtx>
-      bool parse(It& f, It l, Ctx&, RCtx&, from_attribute_type& from_attr) const
-      {
-          bool result=
-            x3::phrase_parse(
-              f,
-              l,
-              from_parser, x3::blank,
-              from_attr);
-          return result;
-      }
-  };
-  template
   < typename ToAttribute
   , typename FromParser
+  , typename TransformTag=transform_tag_default
   >
   auto
 make_transform_parser
   ( FromParser from_parser
   )
-  {  return transform_parser_attribute<FromParser,ToAttribute>{from_parser};
+  {  return transform_parser_attribute<FromParser,ToAttribute,TransformTag>{from_parser};
   }
-}}}
+}}}}
 #endif//USE_UNFOLD_LEFT
 #endif

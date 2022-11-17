@@ -7,9 +7,9 @@ https://github.com/boostorg/spirit/issues/707
 #include <iostream>
 #include <string>
 #include <vector>
-//#define USE_TRACE_SCOPE
+#define USE_TRACE_SCOPE
 #ifdef USE_TRACE_SCOPE
-#include <boost/utility/demangle_type.hpp>
+#include <boost/iostreams/utility/templ_expr/demangle_fmt_type.hpp>
 #include <boost/utility/trace_scope.hpp>
 #endif
 
@@ -44,27 +44,16 @@ struct LogData {
 
 auto dataSet = std::vector<LogData>{};
 
-//#define MOVE_TO_SRC_LOGDATA
-#ifdef MOVE_TO_SRC_LOGDATA
-namespace boost{namespace spirit{namespace x3{namespace traits{
-    template<typename Source>
-    inline void move_to(Source& src, LogData& dest)
-    {
-        unsigned i=dataSet.size();
-        dest.f3=i;
-        std::cout<<__LINE__<<':'<<__func__<<":size="<<i<<":src="<<src<<";\n";
-    }
-}}}}
-#endif//MOVE_TO_SRC_LOGDATA
 #include <boost/fusion/adapted/struct/adapt_struct.hpp>
-#include <boost/spirit/home/x3.hpp>
-#include <boost/spirit/home/x3/support/traits/print_attribute.hpp>
 
 BOOST_FUSION_ADAPT_STRUCT(S1, bStar, f1, f2, f3);
 BOOST_FUSION_ADAPT_STRUCT(S2, f1, f2, f3);
 BOOST_FUSION_ADAPT_STRUCT(LogData, f3, f4, f5, f6);
 
+#include <boost/spirit/home/x3.hpp>
+#include <boost/spirit/home/x3/support/traits/print_attribute.hpp>
 namespace x3 = boost::spirit::x3;
+
 auto f3_content
   = x3::int_ % ','
   ;
@@ -80,7 +69,7 @@ auto f3_parser
     #include <boost/fusion/tuple/tuple_tie.hpp>
   #endif//USE_TUPLE_TIE
 namespace boost{namespace spirit{namespace x3{namespace traits{
-  using f3_attr=x3::attribute_of_default<decltype(f3_parser)>;
+  using f3_aof=x3::attribute_of_default<decltype(f3_parser)>;
 
   template
   <
@@ -88,7 +77,7 @@ namespace boost{namespace spirit{namespace x3{namespace traits{
   struct
 transform_attribute
   < f3_ast
-  , f3_attr
+  , f3_aof
   , transform_parser_id
   >
   {
@@ -104,7 +93,7 @@ transform_attribute
          //to the value passed to the transform_parser_attribute::from_parser.
       }
     #else  
-      using from_attribute_type=f3_attr;
+      using from_attribute_type=f3_aof;
       static auto pre(to_attribute_type& to_attr) 
       { return from_attribute_type(); 
       }
@@ -134,7 +123,8 @@ int main() {
     auto s = std::string
     {
 R"(  39 45 13833 1.186186 2796264 221200 {13,  9,  4, 10,  2,  3}
-     34 44 45264 1.227986 2796264 884752 {14,  4,  0,  9, 11,  2}
+     34 44
+      45264 1.227986 2796264 884752 {14,  4,  0,  9, 11,  2}
      44 55 66666          7777777 888888 {10, 20,  0, 30, 40, 50}
   )"
      };

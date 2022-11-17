@@ -29,23 +29,24 @@ namespace boost { namespace spirit { namespace x3
         bool parse(Iterator& first, Iterator const& last
           , Context const& context, RContext& rcontext, Attribute& attr) const
         {
-            boost::trace_scope ts("list::parse");
+            boost::trace_scope ts(stringify("debug/*/operator/list.hpp:",__LINE__,":list<Left,Right>::",__func__));
             std::cout<<"Parser=\n"<<demangle_fmt_type(*this)<<";\n";
             std::cout<<"Attribute=\n"<<demangle_fmt_type<Attribute>()<<";\n";
-            // in order to succeed we need to match at least one element
-            if (!detail::parse_into_container(
-                this->left, first, last, context, rcontext, attr))
-                return false;
-
-            Iterator iter = first;
-            while (this->right.parse(iter, last, context, rcontext, unused)
-                && detail::parse_into_container(
-                    this->left, iter, last, context, rcontext, attr))
+            bool const result=detail::parse_into_container(this->left, first, last, context, rcontext, attr)
+                //1st element.
+                ;
+            if(result)// in order to succeed we need to match at least one element
             {
-                first = iter;
+                Iterator iter = first;
+                while 
+                (  this->right.parse(iter, last, context, rcontext, unused)//delimiter, ignore attribute
+                && detail::parse_into_container(this->left, iter, last, context, rcontext, attr)//next element
+                )
+                {
+                    first = iter;
+                }
             }
-
-            return true;
+            return result;
         }
     };
 

@@ -30,6 +30,9 @@
 
 #include <iterator> // for std::make_move_iterator
 
+#pragma push_macro("FILE_SHORT")
+#define FILE_SHORT "detail/sequence.hpp"
+
 namespace boost { namespace spirit { namespace x3
 {
     template <typename Left, typename Right>
@@ -76,9 +79,10 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
     template <typename Attribute>
     struct pass_sequence_attribute_size_one_view
     {
-        typedef typename fusion::result_of::deref<
-            typename fusion::result_of::begin<Attribute>::type
-        >::type type;
+          typedef typename fusion::result_of::deref
+          < typename fusion::result_of::begin<Attribute>::type
+          >::type 
+        type;
 
         static type call(Attribute& attribute)
         {
@@ -100,24 +104,31 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
     };
 
     template <typename Parser, typename Attribute, typename Enable = void>
-    struct pass_sequence_attribute :
-        mpl::if_<
-            traits::is_size_one_view<Attribute>
-          , pass_sequence_attribute_size_one_view<Attribute>
-          , pass_through_sequence_attribute<Attribute>>::type {};
+    struct pass_sequence_attribute
+      : mpl::if_
+        < traits::is_size_one_view<Attribute>
+        , pass_sequence_attribute_size_one_view<Attribute>
+        , pass_through_sequence_attribute<Attribute>
+        >::type 
+    {};
 
     template <typename L, typename R, typename Attribute>
     struct pass_sequence_attribute<sequence<L, R>, Attribute>
       : pass_through_sequence_attribute<Attribute> {};
 
     template <typename Parser, typename Attribute>
-    struct pass_sequence_attribute_subject :
-        pass_sequence_attribute<typename Parser::subject_type, Attribute> {};
+    struct pass_sequence_attribute_subject
+      : pass_sequence_attribute<typename Parser::subject_type, Attribute> 
+    {};
 
     template <typename Parser, typename Attribute>
-    struct pass_sequence_attribute<Parser, Attribute
-      , typename enable_if_c<(Parser::is_pass_through_unary)>::type>
-      : pass_sequence_attribute_subject<Parser, Attribute> {};
+    struct pass_sequence_attribute
+      < Parser
+      , Attribute
+      , typename enable_if_c<(Parser::is_pass_through_unary)>::type
+      >
+      : pass_sequence_attribute_subject<Parser, Attribute> 
+    {};
 
       template 
       < typename L
@@ -140,8 +151,8 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
       , R
       , Attribute
       , Context
-      , true//has_left
-      , true//has_right
+      , true//L has attribute
+      , true//R has attribute
       >
     {
         using attr_category = typename traits::attribute_category<Attribute>::type;
@@ -199,8 +210,8 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
       , R
       , Attribute
       , Context
-      , false//has_left
-      , true//has_right
+      , false//L hasn't attribute
+      , true//R has attribute
       >
     {
         typedef unused_type l_part;
@@ -230,8 +241,8 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
       , R
       , Attribute
       , Context
-      , true//has_left
-      , false//has_right
+      , true//L has attribute
+      , false//R hasn't attribute
       >
     {
         typedef Attribute& l_part;
@@ -261,8 +272,8 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
       , R
       , Attribute
       , Context
-      , false//has_left
-      , false//has_right
+      , false//L hasn't attribute
+      , false//R hasn't attribute
       >
     {
         typedef unused_type l_part;
@@ -299,8 +310,11 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
         typename partition::r_part r_part = partition::right(attr);
         typename l_pass::type l_attr = l_pass::call(l_part);
         typename r_pass::type r_attr = r_pass::call(r_part);
-        boost::trace_scope ts("parse_sequence(...,AttributeCategory)");
-        std::cout<<__FILE__<<':'<<__LINE__<<':'<<__func__<<";\n";
+        boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',__func__,"(...,AttributeCategory//ignored)"));
+        using Parser_aof=typename traits::attribute_of<Parser,Context>::type;
+        std::cout<<"demangle_fmt_type<Parser>()=\n"<<demangle_fmt_type<Parser>()<<";\n";
+        std::cout<<"demangle_fmt_type<Parser_aof>()=\n"<<demangle_fmt_type<Parser_aof>()<<";\n";
+        std::cout<<"demangle_fmt_type<Attribute>()=\n"<<demangle_fmt_type<Attribute>()<<";\n";
         std::cout<<"demangle_fmt_type<partition>()=\n"<<demangle_fmt_type<partition>()<<";\n";
         std::cout<<"demangle_fmt_type(parser.left)=\n"<<demangle_fmt_type(parser.left)<<";\n";
         std::cout<<"demangle_fmt_type(l_attr)=\n"<<demangle_fmt_type(l_attr)<<";\n";
@@ -326,20 +340,20 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
         {
             std::cout<<__FILE__<<':'<<__LINE__<<":rcontext_skip not;\n";
             result=parser.left.parse(first, last, context, rcontext, l_attr);
-            std::cout<<"left result="<<result<<";\n";
+            std::cout<<__func__<<":left result="<<result<<";\n";
             if (result)
             {   
                 result=parser.right.parse(first, last, context, rcontext, r_attr);
-                std::cout<<"right result="<<result<<";\n";
+                std::cout<<__func__<<":right result="<<result<<";\n";
             }
         }
     #else
         result=parser.left.parse(first, last, context, rcontext, l_attr);
-        std::cout<<"left result="<<result<<";\n";
+        std::cout<<__func__<<":left result="<<result<<";\n";
         if (result)
         {   
             result=parser.right.parse(first, last, context, rcontext, r_attr);
-            std::cout<<"right result="<<result<<";\n";
+            std::cout<<__func__<<":right result="<<result<<";\n";
         }    
     #endif//USE_ATTR_QVM_VEC
         if(!result) first = save;
@@ -379,8 +393,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
       , Context const& context, RContext& rcontext, Attribute& attr
       , traits::container_attribute)
     {
-        boost::trace_scope ts("parse_sequence(...,container_attribute)");
-        std::cout<<__FILE__<<':'<<__LINE__<<':'<<__func__<<";\n";
+        boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',__func__,"(...,container_attribute)"));
         std::cout<<"Parser=\n"<<demangle_fmt_type<Parser>()<<";\n";
         std::cout<<"Attribute=\n"<<demangle_fmt_type<Attribute>()<<";\n";
         Iterator save = first;
@@ -448,7 +461,8 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
               , is_same<r_attr_type, unused_type> >
         should_split;
 
-        boost::trace_scope ts(stringify("detail/sequence.hpp:",__func__,":LINE=",__LINE__));
+        boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',__func__,""));
+        std::cout<<"should_split="<<should_split::value<<";\n";
         return parse_sequence_assoc(parser, first, last, context, rcontext, attr
           , should_split());
     }
@@ -460,6 +474,10 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
     , RContext
     >
     {
+        static auto this_type_name()
+        { return std::string {"parse_into_container_impl<sequence<L,R>>"};
+        }
+        
         typedef sequence<Left, Right> parser_type;
 
         template <typename Iterator, typename Attribute>
@@ -477,7 +495,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
                   "is value to be stored under that key");
 
             Attribute attr_{};
-            boost::trace_scope ts(stringify("detail/sequence.hpp:parse_into_container_impl<...>::",__func__,"(...,false_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,is_sub=false_)"));
             if (!parse_sequence(parser
 			       , first, last, context, rcontext, attr_, traits::container_attribute()))
             {
@@ -494,7 +512,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
           , Iterator& first, Iterator const& last
           , Context const& context, RContext& rcontext, Attribute& attr, mpl::true_)
         {
-            boost::trace_scope ts(stringify("detail/sequence.hpp:parse_into_container_impl<...>::",__func__,"(...,true_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,is_sub=true_)"));
             return parse_into_container_base_impl<parser_type>::call(
                 parser, first, last, context, rcontext, attr);
         }
@@ -505,25 +523,23 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
           , Iterator& first, Iterator const& last
           , Context const& context, RContext& rcontext, Attribute& attr)
         {
-            typedef typename
-                traits::attribute_of<parser_type, Context>::type
-            attribute_type;
+            using attribute_of_type=typename traits::attribute_of<parser_type, Context>::type;
 
-            typedef typename
-                traits::container_value<Attribute>::type
-            value_type;
+            using container_value_type=typename traits::container_value<Attribute>::type;
 
-            boost::trace_scope ts(stringify("detail/sequence.hpp:parse_into_container_impl<...>::",__func__,"(...):LINE=",__LINE__));
-            std::cout<<"attribute_type="<<demangle_fmt_type<attribute_type>()<<";\n";
-            std::cout<<"value_type="<<demangle_fmt_type<value_type>()<<";\n";
-            using is_substitute=typename traits::is_substitute<attribute_type, value_type>;
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...)"));
+            std::cout<<"parser_type="<<demangle_fmt_type<parser_type>()<<";\n";
+            std::cout<<"attribute_of<parser_type>="<<demangle_fmt_type<attribute_of_type>()<<";\n";
+            std::cout<<"container_value_type="<<demangle_fmt_type<container_value_type>()<<";\n";
+            using is_substitute=typename traits::is_substitute<attribute_of_type, container_value_type>;
+            std::cout<<":is_substitute<attribute_of_type,container_value_type>::trace_tmpl():\n";
             is_substitute::trace_tmpl();
-            std::cout<<":LINE="<<__LINE__<<"***is_substitute="<<is_substitute::type::value<<";\n";
-            return call(parser, first, last, context, rcontext, attr
-	        , typename is_substitute::type());
+            auto constexpr is_sub_type=typename is_substitute::type();
+            return call(parser, first, last, context, rcontext, attr, is_sub_type);
         }
     };
 
 }}}}
 
+#pragma pop_macro("FILE_SHORT")
 #endif

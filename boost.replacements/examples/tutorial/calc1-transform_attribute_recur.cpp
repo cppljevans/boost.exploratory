@@ -36,7 +36,7 @@ using attribute_of_default=typename
   ;
 }}}
 
-#include <boost/fusion/include/adapt_struct.hpp>
+//#include <boost/fusion/include/adapt_struct.hpp>
 
 #include <iostream>
 #include <string>
@@ -85,7 +85,7 @@ namespace client
           struct
         var_expr
           ;
-      //#define SPECIALIZE_RECURRENCE
+      #define SPECIALIZE_RECURRENCE
       #ifdef SPECIALIZE_RECURRENCE
           template
           <
@@ -171,6 +171,73 @@ namespace client
               }
             #endif//USE_VAR_INLINE_PARSE
           };
+      #ifdef SPECIALIZE_RECURRENCE
+          template
+          <
+          >
+          struct
+        var_expr
+          < enum_expression
+          >
+          : x3::parser
+            < var_expr
+              < enum_expression
+              >
+            >
+          , var_attr< enum_expression>  
+          {
+              using
+            to_attribute=
+              var_attr< enum_expression>
+              ;
+              using
+            attribute_type=to_attribute
+              ;
+              struct 
+            transform_attribute
+              { 
+                  using
+                from_parser=
+                  typename var_def< enum_expression>::type
+                  ;
+                  using
+                from_attribute=x3::attribute_of_default<from_parser>
+                  ;
+                  from_attribute
+                pre(to_attribute&)
+                  ;
+                  void
+                post(to_attribute&, from_attribute const&)
+                  ;
+              };
+              template<typename It, typename Ctx, typename RCtx>
+              bool 
+            parse(It& f, It l, Ctx&, RCtx&, to_attribute& to_attr) const
+              {
+                  auto
+                from_attr=transform_attribute::pre(to_attr);
+                  using
+                from_parser=
+                  typename transform_attribute::from_parser
+                  ;
+                  from_parser 
+                from_p;
+                bool result=
+                  from_p.parse
+                  ( f
+                  , l
+                  , x3::blank
+                  , from_attr
+                  );
+                if(result)
+                {
+                    transform_attribute::post(to_attr,from_attr);
+                }
+                return result;
+              }
+          };
+          ;
+      #endif//SPECIALIZE_RECURRENCE
           
         var_expr<enum_expression> const expression;
         var_expr<enum_term> const term;

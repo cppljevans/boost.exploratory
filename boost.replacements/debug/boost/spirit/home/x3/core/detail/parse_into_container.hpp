@@ -23,6 +23,9 @@
 #include <boost/variant/apply_visitor.hpp>
 #include <iterator> // for std::make_move_iterator
 
+#pragma push_macro("FILE_SHORT")
+#define FILE_SHORT "debug/*/core/detail/parse_into_container.hpp"
+
 namespace boost { namespace spirit { namespace x3 { namespace detail
 {
     template <typename Attribute, typename Value>
@@ -71,18 +74,20 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
 
     template <typename Parser, typename Container, typename Context>
     struct parser_accepts_container
-        : traits::is_substitute<
-                typename traits::attribute_of<Parser, Context>::type
-              , Container
-            >
+        : traits::is_substitute
+          < typename traits::attribute_of<Parser, Context>::type
+          , Container
+          >
     {};
 
     template <typename Parser>
     struct parse_into_container_base_impl
     {
-    private:
+        static std::string this_type_name()
+        { return "parse_into_container_base_impl<Parser>"
+        ;}
 
-        // Parser has attribute (synthesize; Attribute is a container)
+        // Parser has attribute (synthesize; Attribute is a container, parser does *not* accept container)
         template <typename Iterator, typename Context
           , typename RContext, typename Attribute>
         static bool call_synthesize_x(
@@ -94,16 +99,18 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
             using value_type = typename traits::container_value<Attribute>::type;
             value_type val{};
 
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_base_impl<...>::",__func__,"(...,accepts_container=false_):LINE=",__LINE__));
-            if (!parser.parse(first, last, context, rcontext, val))
-                return false;
-
-            // push the parsed value into our attribute
-            traits::push_back(attr, static_cast<value_type&&>(val));
-            return true;
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,accepts_container=false_)"));
+            std::cout<<":Parser=\n"<<demangle_fmt_type<Parser>()<<";\n";
+            std::cout<<":value_type=\n"<<demangle_fmt_type<value_type>()<<";\n";
+            bool const result=parser.parse(first, last, context, rcontext, val);
+            std::cout<<":result="<<result<<";\n";
+            if (result)
+              // push the parsed value into our attribute
+              traits::push_back(attr, static_cast<value_type&&>(val));
+            return result;
         }
 
-        // Parser has attribute (synthesize; Attribute is a container)
+        // Parser has attribute (synthesize; Attribute is a container, parser *does* accept container)
         template <typename Iterator, typename Context
           , typename RContext, typename Attribute>
         static bool call_synthesize_x(
@@ -111,8 +118,10 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
           , Iterator& first, Iterator const& last
           , Context const& context, RContext& rcontext, Attribute& attr, mpl::true_)
         {
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_base_impl<...>::",__func__,"(...,accepts_container=true_):LINE=",__LINE__));
-            return parser.parse(first, last, context, rcontext, attr);
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,accepts_container=true_)"));
+            bool const result=parser.parse(first, last, context, rcontext, attr);
+            std::cout<<":result="<<result<<";\n";
+            return result;
         }
 
         // Parser has attribute (synthesize; Attribute is a container)
@@ -140,7 +149,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
         {
             static_assert(traits::has_size<Attribute, 1>::value,
                 "Expecting a single element fusion sequence");
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_base_impl<...>::",__func__,"(...,is_associative=false_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,is_associative=false_)"));
             return call_synthesize(parser, first, last, context, rcontext,
                 fusion::front(attr));
         }
@@ -161,7 +170,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
             typename fusion::result_of::front<attribute_type>::type>::type;
 
             attribute_type attr_;
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_base_impl<...>::",__func__,"(...,is_associative=true_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,is_associative=true_)"));
             if (!parser.parse(first, last, context, rcontext, attr_))
                 return false;
 
@@ -174,7 +183,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
           , Iterator& first, Iterator const& last, Context const& context
           , RContext& rcontext, Attribute& attr, mpl::true_ /*is_sequence*/)
         {
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_base_impl<...>::",__func__,"(...,is_sequence=true_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,is_sequence=true_)"));
             return call_synthesize_into_fusion_seq(
                 parser, first, last, context, rcontext, attr
               , fusion::traits::is_associative<Attribute>());
@@ -185,7 +194,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
           , Iterator& first, Iterator const& last, Context const& context
           , RContext& rcontext, Attribute& attr, mpl::false_ /*is_sequence*/)
         {
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_base_impl<...>::",__func__,"(...,is_sequence=false_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,is_sequence=false_)"));
             return call_synthesize(parser, first, last, context, rcontext, attr);
         }
 
@@ -195,7 +204,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
           , Iterator& first, Iterator const& last, Context const& context
           , RContext& rcontext, Attribute& attr, mpl::true_)
         {
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_base_impl<...>::",__func__,"(...,has_attribute=true_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,has_attribute=true_)"));
             return call_synthesize_dispatch_by_seq(parser, first, last, context, rcontext, attr
                 , fusion::traits::is_sequence<Attribute>());
         }
@@ -207,26 +216,24 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
           , Iterator& first, Iterator const& last, Context const& context
           , RContext& rcontext, Attribute& /* attr */, mpl::false_)
         {
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_base_impl<...>::",__func__,"(...,has_attribute=false_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,has_attribute=false_)"));
             return parser.parse(first, last, context, rcontext, unused);
         }
-
-
-    public:
 
         template <typename Iterator, typename Context, typename RContext, typename Attribute>
         static bool call(Parser const& parser
           , Iterator& first, Iterator const& last, Context const& context
           , RContext& rcontext, Attribute& attr)
         {
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_base_impl<...>::",__func__,"(...,attr):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,attr)"));
             return call(parser, first, last, context, rcontext, attr
               , mpl::bool_<traits::has_attribute<Parser, Context>::value>());
         }
     };
 
     template <typename Parser, typename Context, typename RContext, typename Enable = void>
-    struct parse_into_container_impl : parse_into_container_base_impl<Parser> {};
+    struct parse_into_container_impl 
+        : parse_into_container_base_impl<Parser> {};
 
     template <typename Parser, typename Iterator, typename Container, typename Context>
     struct parser_attr_is_substitute_for_container_value
@@ -245,16 +252,25 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
     < Parser
     , Context
     , RContext
-    , typename enable_if<traits::handles_container<Parser, Context>>::type
+    , typename enable_if
+      < traits::handles_container
+        < Parser
+        , Context
+        >
+      >::type
     >
     {
+        static std::string this_type_name()
+        { return "parse_into_container_impl<,handles_container>"
+        ;}
+        
         template <typename Iterator, typename Attribute>
         static bool call(
             Parser const& parser
           , Iterator& first, Iterator const& last
           , Context const& context, RContext& rcontext, Attribute& attr, mpl::false_)
         {
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_impl<...>::",__func__,"(...,attr,pass_as_is=false_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,Attribute&,pass_as_is=false_)"));
             return parse_into_container_base_impl<Parser>::call(
                 parser, first, last, context, rcontext, attr);
         }
@@ -265,7 +281,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
           , Iterator& first, Iterator const& last
           , Context const& context, RContext& rcontext, unused_type attr, mpl::true_)
         {
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_impl<...>::",__func__,"(...,unused_type,pass_as_is=true_):LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,unused_type,pass_as_is=true_)"));
             return parser.parse(first, last, context, rcontext, attr);
         }
 
@@ -275,10 +291,10 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
           , Iterator& first, Iterator const& last
           , Context const& context, RContext& rcontext, Attribute& attr, mpl::true_)
         {
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,Attribute&,pass_as_is=true_)"));
             if (traits::is_empty(attr))
                 return parser.parse(first, last, context, rcontext, attr);
             Attribute rest;
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_impl<...>::",__func__,"(...,rest,pass_as_is=true_):LINE=",__LINE__));
             bool r = parser.parse(first, last, context, rcontext, rest);
             if (r)
                 traits::append(attr, std::make_move_iterator(rest.begin()),
@@ -304,7 +320,7 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
               , mpl::not_<parser_attr_is_substitute_for_container_value>>
             pass_attibute_as_is;
 
-            boost::trace_scope ts(stringify("core/detail/parse_into_container_impl<...>::__func__,:LINE=",__LINE__));
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name(),"::",__func__,"(...,Attribute&)"));
             return call(parser, first, last, context, rcontext, attr,
                 pass_attibute_as_is());
         }
@@ -317,18 +333,16 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
       , Iterator& first, Iterator const& last, Context const& context
       , RContext& rcontext, Attribute& attr)
     {
-        boost::trace_scope ts(stringify("core/detail/",__func__,":LINE=",__LINE__));
-        std::cout<<":FILE="<<__FILE__<<";\n";
-        std::cout<<"Parser=\n"<<demangle_fmt_type<Parser>()<<";\n";
-        std::cout<<"Attribute=\n"<<demangle_fmt_type<Attribute>()<<";\n";
-        using handles_container=traits::handles_container<Parser, Context>;
-        std::cout<<"handles_container="<<handles_container::value<<";\n";
-        bool result=parse_into_container_impl<Parser, Context, RContext>::call(
-            parser, first, last, context, rcontext, attr);
+        boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',__func__));
+        std::cout<<":Parser=\n"<<demangle_fmt_type<Parser>()<<";\n";
+        std::cout<<":Attribute=\n"<<demangle_fmt_type<Attribute>()<<";\n";
+        using impl=parse_into_container_impl<Parser, Context, RContext>;
+        bool result=impl::call( parser, first, last, context, rcontext, attr);
         std::cout<<__func__<<":result="<<result<<";\n";
         return result;    
     }
 
 }}}}
 
+#pragma pop_macro("FILE_SHORT")
 #endif

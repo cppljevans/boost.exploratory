@@ -3,10 +3,8 @@ SHELL := /bin/bash
 PATH := $(USER)/bin:$(PATH)
 MAIN=fmt-insource
 MAIN=fmt-stdin
-MAIN=fmt-compiler-out
+#MAIN=fmt-compiler-out
 #MAIN=xpr-insource
-HOW=clangxx11_0_0
-#HOW=gxx10_2_0
 
 DIR.root := $(shell dirup_dir_file.pl $(PWD) root.imk)
 include $(DIR.root)/root.imk
@@ -36,5 +34,6 @@ xxx: $@.txt
 	echo $@
 show:
 	echo "BUILD_HOW_WHAT.dir=$(BUILD_HOW_WHAT.dir)"
+	echo "DIR.root=$(DIR.root)"
 find-x3:
 	grep -e '/x3' *.cpp

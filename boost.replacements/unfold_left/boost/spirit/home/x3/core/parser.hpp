@@ -22,6 +22,7 @@
 #include <boost/core/ignore_unused.hpp>
 #include <boost/assert.hpp>
 #include <string>
+#include <sstream>
 
 #include <boost/fusion/container/generation/make_deque.hpp>
 #include <boost/fusion/sequence/intrinsic/at_c.hpp>
@@ -29,6 +30,9 @@
 #if !defined(BOOST_SPIRIT_X3_NO_RTTI)
 #include <typeinfo>
 #endif
+
+#pragma push_macro("FILE_SHORT")
+#define FILE_SHORT "unfold_left/*/core/parser.hpp"
 
 namespace boost { namespace spirit { namespace x3
 {
@@ -67,6 +71,32 @@ namespace boost { namespace spirit { namespace x3
         }
     };
 
+    template <typename Parser, typename Enable = void>
+    struct get_info
+    {
+        std::ostream& operator()(std::ostream& sout, Parser const& p) const
+        {
+            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":get_info::"<<__func__<<"(std::ostream& sout, Parser const& p);\n";
+            return sout<<demangle_fmt_type<Parser>();
+        }
+        std::string operator()(Parser const& p) const
+        {
+            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":get_info::"<<__func__<<"(Parser const& p);\n";
+            return demangle_fmt_type<Parser>();
+        }
+    };
+    
+    template <typename Parser>
+    std::string what(Parser const& p)
+    {
+        return get_info<Parser>()(p);
+    }
+    template <typename Parser>
+    std::ostream& what(std::ostream& sout, Parser const& p)
+    {
+        return get_info<Parser>()(sout, p);
+    }
+
     struct unary_category;
     struct binary_category;
     struct n_ary_category;
@@ -104,37 +134,240 @@ namespace boost { namespace spirit { namespace x3
         Right right;
     };
     
-    template <typename Derived, typename... SubParsers>
-    struct n_ary_parser : parser<Derived>
+      template
+      < std::size_t... IndicesLeft
+      , std::size_t... IndicesRight
+      , typename NaryLeft
+      , typename NaryRight
+      >
+    constexpr auto n_ary_make_deque
+      ( std::integer_sequence<std::size_t, IndicesLeft...>
+      , std::integer_sequence<std::size_t, IndicesRight...>
+      , NaryLeft const& left
+      , NaryRight const& right
+      )
+      { return boost::fusion::make_deque
+        ( left.template sub_parser<IndicesLeft>()...
+        , right.template sub_parser<IndicesRight>()...
+        );
+      }
+      template
+      < std::size_t... IndicesLeft
+      , typename NaryLeft
+      , typename UnaryRight
+      >
+    constexpr auto n_ary_make_deque
+      ( std::integer_sequence<std::size_t, IndicesLeft...>
+      , NaryLeft const& left
+      , UnaryRight const& right
+      )
+      { return boost::fusion::make_deque
+        ( left.template sub_parser<IndicesLeft>()...
+        , right
+        );
+      }
+          
+      template
+      < template<typename...>typename Derived
+      , typename Left
+      , typename Right
+      >
+    constexpr auto n_ary_sub_parsers
+      ( Left const& left
+      , Right const& right
+      )
+      {
+        return 
+          boost::fusion::make_deque
+          ( left
+          , right
+          );
+      }
+
+      template
+      < template<typename...>typename Derived
+      , typename... Left
+      , typename Right
+      >
+    constexpr auto n_ary_sub_parsers
+      ( Derived< Left...> const& left
+      , Right const& right
+      )
+      { return
+          n_ary_make_deque
+          ( Derived< Left...>::indices
+          , left
+          , right
+          );
+      }
+
+      template
+      < template<typename...>typename Derived
+      , typename... Left
+      , typename... Right
+      >
+    constexpr auto n_ary_sub_parsers
+      ( Derived< Left...> const& left
+      , Derived< Right...> const& right
+      )
+      { return
+          n_ary_make_deque
+          ( Derived<Left...>::indices
+          , Derived<Right...>::indices
+          , left
+          , right
+          );
+      }
+            
+    template <typename>
+    struct n_ary_parser ;
+    
+      template 
+      < template<typename...>typename Derived
+      , typename... SubParsers
+      >
+    struct n_ary_parser
+      < Derived<SubParsers...>
+      > 
+    : parser<Derived<SubParsers...>>
     {
+        using sub_parsers_t=boost::fusion::deque<SubParsers...>;
+        sub_parsers_t sub_parsers;
         typedef n_ary_category category;
         static bool const has_action =
-            (  false
-            || ...
-            || SubParsers::has_action
-            );
+          (  false
+          || ...
+          || SubParsers::has_action
+          );
 
         static bool const has_attribute = true
           //even though may not be true for any SubParsers, delare true
           //when no collapsing, because this allows emplace use on attributes in 
           //Derived.
           ;
-        static auto constexpr indices=std::index_sequence_for<SubParsers...>{};
-        constexpr n_ary_parser(SubParsers const& ...sp)
-            : sub_parsers(sp...) {}
+        constexpr n_ary_parser
+          ( fusion::deque<SubParsers...> const& sp
+          )
+          : sub_parsers(sp) 
+          {
+            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":"<<__func__<<":sub_parsers="<<demangle_fmt_type(sub_parsers)<<";\n";
+          }
          
-        template<typename Left, typename Right, std::size_t ...Indices>
-        constexpr n_ary_parser(Left const& left, Right const& right, std::integer_sequence<std::size_t, Indices...>)
-            : sub_parsers(left.template sub_parser<Indices>()..., right) {}
-
-        boost::fusion::deque<SubParsers...> sub_parsers;
+        static auto constexpr indices=std::index_sequence_for<SubParsers...>{};
+        
         
         template<std::size_t I>
         auto& sub_parser(){ return fusion::at_c<I>(sub_parsers);}
         template<std::size_t I>
         constexpr auto const& sub_parser()const{ return fusion::at_c<I>(sub_parsers);}
     };
-
+    
+      template 
+      < template<typename...>typename Derived
+      , typename... SubParsers
+      >
+    struct get_info
+      < Derived<SubParsers...>
+      , std::enable_if_t
+        < std::is_base_of_v
+          < n_ary_parser
+            < Derived<SubParsers...>
+            >
+          , Derived<SubParsers...>
+          >
+        >
+      >
+    {
+        using Parser=Derived<SubParsers...>;
+        
+        std::ostream& operator()(std::ostream& sout, Parser const& p) const
+        {
+            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":get_info::"<<__func__<<"(std::ostream& sout, Parser const& p);\n";
+            sout<<demangle_fmt_type<Parser>();
+            sout<<"\n";
+            auto parser_what=[&p,&sout]<std::size_t Index>()
+              { char constexpr delim=(Index==0)?'(':','
+              ; sout<<delim<<" "
+              ; sout<<indent_buf_in
+              ; what(sout, p.template sub_parser<Index>())<<"\n"
+              ; sout<<indent_buf_out
+              ; return false
+              ;};
+            auto parsers_what=[&parser_what]<std::size_t ...Indices>(std::integer_sequence< std::size_t, Indices...>)
+              { bool ingore[]=
+                { parser_what.template operator()<Indices>()...
+                }
+              ;};
+            parsers_what(Parser::indices);
+            sout<<")";
+            //sout<<"\n( "<<what(p.template sub_parser<0>())<<"\n)";
+            sout.flush();
+            return sout;
+        }
+        std::string operator()(Parser const& p) const
+        {
+            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":get_info::"<<__func__<<"(Parser const& p);\n";
+            std::ostringstream oss;
+              boost::iostreams::indent_scoped_ostreambuf<char>
+            indent_outbuf(oss,2);
+            this->operator()(oss,p);
+            std::string result=oss.str();
+            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":result=\n"<<result<<";\n";
+            return result;
+        }
+    };
+    
+      template
+      < template<typename...>typename Derived
+      , typename... SubParsers
+      >
+    auto n_ary_make_parser
+      ( fusion::deque<SubParsers...>const& sub_parsers
+      )
+      { 
+      
+        using derived_parser_t=
+          Derived<SubParsers...>
+          ;
+      //#define TRACE_N_ARY_MAKE_PARSER
+      #ifdef TRACE_N_ARY_MAKE_PARSER
+        boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',__func__));
+        std::cout
+          <<":derived_parser_t=\n"<<demangle_fmt_type<derived_parser_t>()<<";\n"
+          ;
+      #endif//TRACE_N_ARY_MAKE_PARSER
+        derived_parser_t derived_parser_v(sub_parsers);
+      #ifdef TRACE_N_ARY_MAKE_PARSER
+        get_info<derived_parser_t> get_info_v;
+        std::cout<<__LINE__<<":get_info=\n"<<get_info_v(std::cout, derived_parser_v)<<";\n";
+      #endif//TRACE_N_ARY_MAKE_PARSER
+        return derived_parser_v;
+      }
+      template
+      < template<typename...>typename Derived
+      , typename Left
+      , typename Right
+      >
+    auto n_ary_make_parser
+      ( Left const& left
+      , Right const& right
+      )
+      { auto sub_parsers=
+          n_ary_sub_parsers<Derived>( left, right);
+      #if 0
+        std::cout<<FILE_SHORT<<':'<<__LINE__<<":"<<__func__<<";\n"
+          <<":type<left>=\n"<<demangle_fmt_type(left)<<";\n"
+          <<":type<right>=\n"<<demangle_fmt_type(right)<<";\n"
+          <<":type<sub_parsers>=\n"<<demangle_fmt_type(sub_parsers)<<";\n"
+          <<":left=\n"<<what(left)<<";\n"
+          <<":right=\n"<<what(right)<<";\n"
+          ;
+      #endif
+        return n_ary_make_parser<Derived>
+          ( sub_parsers
+          );
+      }
+    
     ///////////////////////////////////////////////////////////////////////////
     // as_parser: convert a type, T, into a parser.
     ///////////////////////////////////////////////////////////////////////////
@@ -221,35 +454,6 @@ namespace boost { namespace spirit { namespace x3
         return p.derived();
     }
 
-    ///////////////////////////////////////////////////////////////////////////
-    // The main what function
-    //
-    // Note: unlike Spirit2, spirit parsers are no longer required to have a
-    // "what" member function. In X3, we specialize the get_info struct
-    // below where needed. If a specialization is not provided, the default
-    // below will be used. The default "what" result will be the typeid
-    // name of the parser if BOOST_SPIRIT_X3_NO_RTTI is not defined, otherwise
-    // "undefined"
-    ///////////////////////////////////////////////////////////////////////////
-    template <typename Parser, typename Enable = void>
-    struct get_info
-    {
-        typedef std::string result_type;
-        std::string operator()(Parser const&) const
-        {
-#if !defined(BOOST_SPIRIT_X3_NO_RTTI)
-            return typeid(Parser).name();
-#else
-            return "undefined";
-#endif
-        }
-    };
-
-    template <typename Parser>
-    std::string what(Parser const& p)
-    {
-        return get_info<Parser>()(p);
-    }
 }}}
 
 namespace boost { namespace spirit { namespace x3 { namespace traits
@@ -263,5 +467,5 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
         : mpl::bool_<has_attribute<Left, Context>::value ||
                 has_attribute<Right, Context>::value> {};
 }}}}
-
+#pragma pop_macro("FILE_SHORT")
 #endif

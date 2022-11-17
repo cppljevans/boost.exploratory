@@ -1,14 +1,17 @@
 /*=============================================================================
+    Copyright (c) 2022 Larry Joe Evans
     Copyright (c) 2001-2014 Joel de Guzman
     http://spirit.sourceforge.net/
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
-#if !defined(BOOST_SPIRIT_X3_IS_SUBSTITUTE_JAN_9_2012_1049PM)
-#define BOOST_SPIRIT_X3_IS_SUBSTITUTE_JAN_9_2012_1049PM
+#if !defined(BOOST_SPIRIT_X3_IS_SUBSTITUTE_OCT_1_2022_604PM)
+#define BOOST_SPIRIT_X3_IS_SUBSTITUTE_OCT_1_2022_604PM
 
 #include <boost/spirit/home/x3/support/traits/container_traits.hpp>
+#include <boost/spirit/home/x3/support/traits/is_variant.hpp>
+#include <boost/spirit/home/x3/support/traits/tuple_traits.hpp>
 #include <boost/fusion/include/is_sequence.hpp>
 #include <boost/fusion/include/map.hpp>
 #include <boost/fusion/include/value_at_key.hpp>
@@ -19,13 +22,15 @@
 #include <boost/mpl/apply.hpp>
 #include <boost/mpl/filter_view.hpp>
 #include <boost/mpl/size.hpp>
+#include <boost/mpl/integral_c.hpp>
 #include <boost/mpl/logical.hpp>
-#include <boost/mpl/at.hpp>
-#include <boost/mpl/count_if.hpp>
+#include <boost/mpl/vector.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/optional/optional.hpp>
-#include <boost/type_traits/is_same.hpp>
-//#include <magic_enum_io.hpp>
+#include <boost/spirit/home/x3/support/traits/is_same_enough.hpp>
+
+#pragma push_macro("FILE_SHORT")
+#define FILE_SHORT "debug/*/traits/is_substitute.hpp"
 
 namespace boost { namespace spirit { namespace x3 { namespace traits
 {
@@ -38,381 +43,517 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
     template <typename Variant, typename Attribute>
     struct variant_has_substitute;
 
-    template <typename Variant, typename Attribute>
-    struct variant_has_substitute_impl;
-
     namespace detail
     {
-        enum enum_tag
-        { tag_value_type_is_substitute
-        , tag_impl_default
-        , tag_seq_seq_equal
-        , tag_containers
-        , tag_impl_variant
-        , tag_sub_same_impl
+        template <typename T, typename Attribute>
+        void is_substitute_impl_enablers_trace_tmpl()
+          //forward delcare because static member calls static members of 
+          //is_substitute_impl_enabler templates defined below.
+        ;
+        template <typename T, typename Attribute, typename Enable = void>
+        struct is_substitute_impl 
+        : mpl::false_ 
+        {
+            static bool trace_tmpl()
+            { auto constexpr this_type_name="is_substitute_impl<T ,Attribute, Enable = void>";
+              std::cout<<FILE_SHORT<<':'<<__LINE__<<':'<<this_type_name<<"::"<<__func__<<":result=mpl::false_;\n";
+              is_substitute_impl_enablers_trace_tmpl<T,Attribute>();
+              return false;
+            }
         };
-        template<enum_tag Tag>
-        struct trace_tag{};
+
+        template <typename T, typename Attribute, typename Tag>
+        struct is_substitute_impl_enabler
+        /**@brief
+         *  The Enable arg to some is_substitute_impl< T, Attribute, Enable>.
+         *  Also provides a static trace_tmpl which provides trace of that Enable.
+         *  The Tag argument determines which is_substitute_impl is the
+         *  candidate for trace of the Enable arg.
+         *
+         *  Making the enabler separate from the is_substitute_impl allows the maintainer 
+         *  to more easily see why one is_substitute_impl was chosen by the compiler over another
+         *  by simply invoking the enabler::trace_tmpl.  For example, see the
+         *  is_substitute_impl_enablers_trace_tmpl definition below.
+         */
+          ;
         
-        template<typename T, typename Attribute>
-        void trace_fun_tmpl(trace_tag<tag_value_type_is_substitute>)
-        { std::cout<<__func__<<"<tag_value_type_is_substitute>:LINE="<<__LINE__<<";\n";
-          using container_value_T=typename container_value<T>::type;
-          using container_value_A=typename container_value<Attribute>::type;
-          using super_t=is_substitute<container_value_T,container_value_A>;
-          std::cout<<"super_t::trace_tmpl"; super_t::trace_tmpl();
-        }
+          template
+          < typename U
+          , typename Enable=void
+          >
+        struct size_composite
+          ;
+          template
+          < typename U
+          >
+        struct size_composite
+          < U
+          , typename enable_if
+            < fusion::traits::is_sequence<U>
+            >::type
+          >
+          : fusion::result_of::size<U>
+          {
+          };
+          template
+          < typename ...U
+          , template<typename...>typename Composite
+          >
+        struct size_composite
+          < Composite<U...>
+          , typename enable_if
+            < is_variant<Composite<U...>>
+            >::type
+          >
+          : mpl::integral_c<std::size_t,sizeof...(U)>
+          {
+          };
+          template
+          < typename U
+          , std::size_t I
+          , typename Enable=void
+          >
+        struct type_at_c
+          ;
+          template
+          < typename U
+          , std::size_t I
+          >
+        struct type_at_c
+          < U
+          , I
+          , typename enable_if
+            < fusion::traits::is_sequence<U>
+            >::type
+          >
+          {
+            using type=typename
+              std::remove_reference
+              < typename std::remove_reference
+                < typename fusion::result_of::at_c
+                  < U
+                  , I
+                  >::type
+                >::type
+              >::type;
+          };
+          template
+          < typename U
+          , std::size_t I
+          >
+        struct type_at_c_variadic
+          ;
+          template
+          < typename ...U
+          , template<typename...>typename Composite
+          , std::size_t I
+          >
+        struct type_at_c_variadic
+          < Composite<U...>
+          , I
+          >
+          {
+            using type=typename mpl::at_c<mpl::vector<U...>,I>::type;
+          };
+          template
+          < typename U
+          , std::size_t I
+          >
+        struct type_at_c
+          < U
+          , I
+          , typename enable_if
+            < is_variant<U>
+            >::type
+          >
+          : type_at_c_variadic<U,I>
+          {
+          };
+
+          template
+          < typename Aof
+          , typename Uda
+          , typename Indices
+          >
+        struct component_types_substitutable_at
+          ;
+          template
+          < typename Aof
+          , typename Uda
+          , std::size_t... Indices
+          >
+        struct component_types_substitutable_at
+          < Aof
+          , Uda
+          , std::index_sequence<Indices...>
+          >
+        #ifdef __cpp_fold_expressions
+          : mpl::bool_
+            (  ... 
+            && bool
+               ( is_substitute
+                 < typename type_at_c<Aof,Indices>::type
+                 , typename type_at_c<Uda,Indices>::type
+                 >::value
+               )
+            )
+        #else
+          #   warning "Use -std=c++17 or -std=gnu++17 compiler flag to enable C++17 mode"
+        #endif//__cpp_fold_expressions
+          {
+              static bool trace_tmpl()
+              {   
+                  auto index=[]<std::size_t I>()->bool
+                    { //std::cout<<":I="<<I<<";\n";
+                    #if 1
+                      using Aof_I=typename type_at_c<Aof,I>::type;
+                      using Uda_I=typename type_at_c<Uda,I>::type;
+                      std::cout<<":Aof["<<I<<"]=\n"<<demangle_fmt_type<Aof_I>()<<";\n";
+                      std::cout<<":Uda["<<I<<"]=\n"<<demangle_fmt_type<Uda_I>()<<";\n";
+                      using is_sub_Aof_Uda=is_substitute<Aof_I,Uda_I>;
+                      is_sub_Aof_Uda::trace_tmpl();
+                      std::cout<<FILE_SHORT<<':'<<__LINE__<<":is_sub_Aof_Uda["<<I<<"]="<<is_sub_Aof_Uda::value<<";\n";
+                      return is_sub_Aof_Uda::value;
+                    #else
+                      return true;
+                    #endif
+                    };
+                  bool results[]
+                  { index.template operator()<Indices>()...
+                  };
+                  bool result=true;
+                  for(unsigned i=0; i<sizeof...(Indices); ++i) result=result&&results[i];
+                  std::cout<<FILE_SHORT<<':'<<__LINE__<<":value="<<value<<":result="<<result<<";\n";
+                  return value;
+              }
+          };
+          template
+          < typename Aof//attribute_of<Parser> for some Parser
+          , typename Uda//user defined attribute.
+          >
+        struct component_types_substitutable
+          {
+              static std::size_t constexpr size_Aof=
+                size_composite<Aof>::value
+                ;
+              static std::size_t constexpr size_Uda=
+                size_composite<Uda>::value
+                ;
+              static bool constexpr big_enough_Uda=
+                size_Aof<=size_Uda
+                ;
+              using type=
+                mpl::and_
+                < mpl::bool_<big_enough_Uda>
+                , component_types_substitutable_at
+                  < Aof
+                  , Uda
+                  , std::make_index_sequence<size_Aof>
+                  >
+                >;
+              static bool trace_tmpl()
+              {   if constexpr(big_enough_Uda)
+                  {
+                      using at_t=
+                        component_types_substitutable_at
+                        < Aof
+                        , Uda
+                        , std::make_index_sequence
+                          < size_composite<Aof>::value
+                          >
+                        >;
+                      at_t::trace_tmpl();
+                      return at_t::value;
+                  }
+                  else
+                  {   std::cout<<__FILE__<<':'<<__LINE__<<':'<<__func__<<":result="<<false<<";\n";
+                      return false;
+                  }
+              }
+          };
           
+        struct enable_are_seq
+          {};
+        
+        template <typename T, typename Attribute>
+        struct is_substitute_impl_enabler<T, Attribute, enable_are_seq>
+          : mpl::and_
+            < fusion::traits::is_sequence<T>
+            , fusion::traits::is_sequence<Attribute>
+            , component_types_substitutable<T, Attribute>
+            >
+        {
+            static void trace_tmpl()
+            { boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,":is_substitute_impl_enabler<T,Attribute,enable_are_seq>"));
+              bool constexpr is_T=fusion::traits::is_sequence<T>::value;
+              bool constexpr is_Attribute=fusion::traits::is_sequence<Attribute>::value;
+              std::cout<<"is_sequence<T>="<<is_T<<";\n";
+              std::cout<<"is_sequence<Attribute>="<<is_Attribute<<";\n";
+              bool constexpr pre_enabler=is_T && is_Attribute;
+              if constexpr (pre_enabler)
+              {
+                  using post_enabler=component_types_substitutable<T, Attribute>;
+                  post_enabler::trace_tmpl();
+                  std::cout<<"component_types_substitutable="<<post_enabler::type::value<<";\n";
+              }
+            }
+        };
+        
+        template <typename T, typename Attribute>
+        struct is_substitute_impl
+          < T
+          , Attribute
+          , typename enable_if
+            < is_substitute_impl_enabler<T, Attribute, enable_are_seq>
+            >::type
+          >
+          : mpl::true_ 
+        {
+            static void trace_tmpl()
+            { is_substitute_impl_enabler<T, Attribute, enable_are_seq>::trace_tmpl();
+            }
+        };
+        
+      #ifdef USE_IS_SUBSTITUTE_IMPL_VAR2
+        struct enable_are_var
+          {};
+        
+        template <typename T, typename Attribute>
+        struct is_substitute_impl_enabler<T, Attribute, enable_are_var>
+          : mpl::and_
+            < is_variant<T>
+            , is_variant<Attribute>
+            , component_types_substitutable<T, Attribute>
+            >
+        {
+            static void trace_tmpl()
+            { 
+              boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,":is_substitute_impl_enabler<T,Attribute,enable_are_var>"));
+              bool constexpr is_T=is_variant<T>::value;
+              bool constexpr is_Attribute=is_variant<Attribute>::value;
+              std::cout<<"is_variant<T>="<<is_T<<";\n";
+              std::cout<<"is_variant<Attribute>="<<is_Attribute<<";\n";
+              bool constexpr pre_enabler=is_T && is_Attribute;
+              if constexpr (pre_enabler)
+              {
+                  using post_enabler=component_types_substitutable<T, Attribute>;
+                  post_enabler::trace_tmpl();
+                  std::cout<<"component_types_substitutable="<<post_enabler::type::value<<";\n";
+              }
+              std::cout<<":result="<<is_substitute_impl_enabler::value<<";\n";
+            }
+        };
+        
+        template <typename T, typename Attribute>
+        struct is_substitute_impl
+          < T
+          , Attribute
+          , typename enable_if
+            < is_substitute_impl_enabler<T, Attribute, enable_are_var>
+            >::type
+          >
+          : mpl::true_ 
+        {
+            static void trace_tmpl()
+            { is_substitute_impl_enabler<T, Attribute, enable_are_var>::trace_tmpl();
+            }
+        };
+      #endif//USE_IS_SUBSTITUTE_IMPL_VAR2
+        
+      #define USE_IS_SUBSTITUTE_IS_VARIANT_ATTRIBUTE
+      #ifdef USE_IS_SUBSTITUTE_IS_VARIANT_ATTRIBUTE
+        struct enable_is_variant_Attribute
+          {};
+        
+        template <typename T, typename Attribute>
+        struct is_substitute_impl_enabler<T, Attribute, enable_is_variant_Attribute>:
+        #ifdef USE_IS_SUBSTITUTE_IMPL_VAR2
+          mpl::and_
+          < mpl::not_<is_variant<T>>
+          , is_variant<Attribute>
+          , variant_has_substitute<Attribute, T>
+          >
+        #else
+          mpl::and_
+          < is_variant<Attribute>
+          , variant_has_substitute<Attribute, T>
+          >
+        #endif//USE_IS_SUBSTITUTE_IMPL_VAR2 
+        {
+            static void trace_tmpl()
+            { 
+              boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,":is_substitute_impl_enabler<T,Attribute,enable_is_variant_Attribute>"));
+              bool constexpr is_variant_Attribute=is_variant<Attribute>::value;
+            #ifdef USE_IS_SUBSTITUTE_IMPL_VAR2 
+              bool constexpr not_variant_T=mpl::not_<is_variant<T>>::value;
+              std::cout<<":not_variant_T="<<not_variant_T<<";\n";
+              bool constexpr pre_enabler=not_variant_T && is_variant_Attribute;
+            #else
+              bool constexpr pre_enabler=is_variant_Attribute;
+            #endif
+              std::cout<<":is_variant_Attribute="<<is_variant_Attribute<<";\n";
+              if constexpr(pre_enabler)
+              { using post_enabler=variant_has_substitute<Attribute, T>;
+                post_enabler::trace_tmpl();
+                std::cout<<"variant_has_substitute="<<post_enabler::type::value<<";\n";
+              }
+            }
+        };
+        
+        template <typename T, typename Attribute>
+        struct is_substitute_impl
+          < T
+          , Attribute
+          , typename enable_if
+            < is_substitute_impl_enabler<T, Attribute, enable_is_variant_Attribute>
+            >::type
+          >
+          : variant_has_substitute
+            < Attribute
+            , T
+            >
+        {
+            static void trace_tmpl()
+            {  
+              is_substitute_impl_enabler<T, Attribute, enable_is_variant_Attribute>::trace_tmpl();
+            }
+        };
+      #endif//USE_IS_SUBSTITUTE_IS_VARIANT_ATTRIBUTE
+        
         template <typename T, typename Attribute>
         struct value_type_is_substitute
-          : is_substitute<
-                typename container_value<T>::type
-              , typename container_value<Attribute>::type>
-        {
-            static auto constexpr struct_tag=tag_value_type_is_substitute;
-            
-            static void trace_tmpl()
-            {  trace_tmpl<T,Attribute>(trace_tag<struct_tag>{});
-            }
-        };
-        
-        template<typename T, typename Attribute>
-        void trace_fun_tmpl(trace_tag<tag_impl_default>)
-        { std::cout<<__func__<<":tag_impl_default:LINE="<<__LINE__<<";\n";
-          std::cout<<"result=false;\n";
-        }
-          
-        template <typename T, typename Attribute, typename Enable = void>
-        struct is_substitute_impl : mpl::false_ 
-        {
-            static auto constexpr struct_tag=tag_impl_default;
-            static auto constexpr class_label="<T ,Attribute, Enable>";
-            static void trace_tmpl()
-            { std::cout<<"is_substitute_impl"<<class_label<<"::"<<__func__<<":LINE="<<__LINE__<<"==false_;\n";
-            }
-        };
-
-        template<typename T, typename Attribute>
-        void trace_fun_tmpl(trace_tag<tag_seq_seq_equal>)
-        { std::cout<<__func__<<"<tag_seq_seq_equal>LINE="<<__LINE__<<";\n";
-          using is_seq_T=fusion::traits::is_sequence<T>;
-          std::cout<<"is_seq_T="<<is_seq_T::value<<";\n";
-          using is_seq_Attribute=fusion::traits::is_sequence<Attribute>;
-          std::cout<<"is_seq_Attribute="<<is_seq_Attribute::value<<";\n";
-          if constexpr (is_seq_T::value && is_seq_Attribute::value)
-          {
-            using mpl_equal=typename
-              mpl::equal
-              < T
-              , Attribute
-              , is_substitute
-              #ifdef USE_IS_SUBSTITUTE_1_78_0
-                < mpl::_1
-                , mpl::_2
-              #else
-                < mpl::_2
-                , mpl::_1
-              #endif
-                > 
-              >::type;
-            std::cout<<"mpl_equal="<<mpl_equal::value<<";\n";
-          }
-        }
-          
-        template <typename T, typename Attribute>
-        struct is_substitute_impl<T, Attribute,
-            typename enable_if<
-                mpl::and_<
-                    fusion::traits::is_sequence<T>,
-                    fusion::traits::is_sequence<Attribute>,
-                    mpl::equal<T, Attribute, is_substitute<mpl::_1, mpl::_2>>
-                >
-              >::type>
-          : mpl::true_ 
-        {
-            static auto constexpr struct_tag=tag_seq_seq_equal;
-            static auto constexpr class_label="<is_sequence<T>,is_sequence<Attribute>,mpl_equal>";
-            static void trace_tmpl()
-            { std::cout<<"is_substitute_impl"<<class_label<<"::"<<__func__<<":LINE="<<__LINE__<<"==true_;\n";
-              trace_fun_tmpl<T,Attribute>(detail::trace_tag<struct_tag>{});
-            }
-        };
-
-        template<typename T, typename Attribute>
-        void trace_fun_tmpl(trace_tag<tag_containers>)
-        { std::cout<<__func__<<"<tag_containers>LINE="<<__LINE__<<";\n";
-          bool constexpr is_container_T=is_container<T>::value;
-          bool constexpr is_container_Attribute=is_container<Attribute>::value;
-          std::cout<<":is_container<T>="<<is_container_T<<";\n";
-          std::cout<<":is_container<Attribute>="<<is_container_Attribute<<";\n";
-          using val_is_sub=value_type_is_substitute<T, Attribute>;
-          auto constexpr struct_tag=val_is_sub::struct_tag;
-          trace_fun_tmpl<T, Attribute>(trace_tag<struct_tag>{});
-        }
-        
-        template <typename T, typename Attribute>
-        struct is_substitute_impl<T, Attribute,
-            typename enable_if<
-                mpl::and_<
-                    is_container<T>,
-                    is_container<Attribute>,
-                    value_type_is_substitute<T, Attribute>
-                >
-            >::type>
-          : mpl::true_ 
-        {
-            static auto constexpr struct_tag=tag_containers;
-            static auto constexpr class_label="<is_container<T>,is_container<Attribute>,value_type_is_substitute>";
-            static void trace_tmpl()
-            {  std::cout<<"is_substitute_impl"<<class_label<<":LINE="<<__LINE__<<"==true_;\n";
-            }
-        };
-      #ifdef USE_ISSUE707_VAR2
-        template <typename T, typename Attribute, typename IsVarT>
-        struct is_substitute_impl_varT
-        ;
-        template <typename T, typename Attribute>
-        struct is_substitute_impl_varT
-        < T
-        , Attribute
-        , mpl::true_//T is variant
-        >
-        : mpl::true_//should check further.
-        {
-            static auto constexpr class_label="is_substitute_impl_varT<,,true_>";
-            static void trace_tmpl()
-            { boost::trace_scope ts(stringify(class_label,":LINE=",__LINE__));
-              std::cout<<"T="<<demange_type_fmt<T>()<<";\n"; 
-              std::cout<<"Attribute="<<demange_type_fmt<Attribute>()<<";\n"; 
-            }
-        };
-        
-        template <typename T, typename Attribute>
-        struct is_substitute_impl_varT
-        < T
-        , Attribute
-        , mpl::false_//T not variant
-        >
-          : variant_has_substitute
-            < Attribute
-            , T
+        /**@brief
+         *  This is needed to delay evaluation of
+         *  the following container_value<X>::type calls
+         *  if those calls were used directly in 
+         *  the is_substitute_enabler<,,are_container> template defined below.
+         *  Otherwise, may get compiler error if either 
+         *  !is_container<T> or !is_container<Attribute> and
+         *  the container_value<X>::type calls are used directly in
+         *  is_substitute_enabler<,,are_container>.
+         **@pre T and Attribute are containers:
+         *  is_container<T>::value && is_container<Attribute>::value
+         */
+          : is_substitute
+            < typename container_value<T>::type
+            , typename container_value<Attribute>::type
             >
         {
-            static auto constexpr class_label="is_substitute_impl_varT<,,false_>";
-            static void trace_tmpl()
-            { boost::trace_scope ts(stringify(class_label,":LINE=",__LINE__));
-              std::cout<<"T="<<demange_type_fmt<T>()<<";\n"; 
-              std::cout<<"Attribute="<<demange_type_fmt<Attribute>()<<";\n"; 
+            static bool trace_tmpl()
+            {
+              auto constexpr this_type_name="detail::value_type_is_substitute<T,Attribute>";
+              boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name));
+              using container_value_T=typename container_value<T>::type;
+              using container_value_Attribute=typename container_value<Attribute>::type;
+              using is_sub_values=is_substitute<container_value_T,container_value_Attribute>;
+              std::cout<<":container_value_T="<<demangle_fmt_type<container_value_T>()<<";\n";
+              std::cout<<":container_value_Attribute="<<demangle_fmt_type<container_value_Attribute>()<<";\n";
+              is_sub_values::trace_tmpl();
+              bool result=is_sub_values::value;
+              std::cout<<":result="<<result<<";\n";
+              return result;
             }
         };
-      #endif
+        
+        struct enable_are_container
+          {};
+
+        template <typename T, typename Attribute>
+        struct is_substitute_impl_enabler<T, Attribute, enable_are_container>
+          : mpl::and_
+            < is_container<T>
+            , is_container<Attribute>
+            , detail::value_type_is_substitute<T, Attribute>
+            >
+          {
+            static auto constexpr this_type_name="is_substitute_impl_enabler<T,Attribute,enable_are_container>";
+            static bool trace_tmpl()
+            { boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name));
+              bool constexpr is_container_T=is_container<T>::value;
+              bool constexpr is_container_Attribute=is_container<Attribute>::value;
+              std::cout<<":is_container_T="<<is_container_T<<";\n";
+              std::cout<<":is_container_Attribute="<<is_container_Attribute<<";\n";
+              bool constexpr pre_enabler=is_container_T && is_container_Attribute;
+              std::cout<<":pre_enabler="<<pre_enabler<<";\n";
+              if constexpr (pre_enabler)
+              {
+                using post_enabler=detail::value_type_is_substitute<T, Attribute>;
+                post_enabler::trace_tmpl();
+              }
+              bool constexpr result=is_substitute_impl_enabler::value;
+              std::cout<<":result="<<result<<";\n";
+              return result;
+            }
+          };
+  
+        template <typename T, typename Attribute>
+        struct is_substitute_impl
+          < T
+          , Attribute
+          , typename enable_if
+            < is_substitute_impl_enabler<T, Attribute, enable_are_container>
+            >::type
+          >
+          : mpl::true_
+        {
+            static bool trace_tmpl()
+            { return is_substitute_impl_enabler<T, Attribute, enable_are_container>::trace_tmpl()
+            ;}
+        };
       
         template <typename T, typename Attribute>
-        struct is_substitute_impl<T, Attribute,
-            typename enable_if<
-                is_variant
-                < Attribute
-                >
-            >::type>
-        #ifdef USE_ISSUE707_VAR2
-          : is_substitute_impl_varT<T, Attribute, typename is_variant<T>::type >
-        #else
-          : variant_has_substitute
-            < Attribute
-            , T
-            >
-        #endif
+        void is_substitute_impl_enablers_trace_tmpl()
         {
-            static auto constexpr class_label="is_substitute_impl:variant_has_substitute";
-            static void trace_tmpl()
-            {  boost::trace_scope ts(stringify(class_label,":LINE=",__LINE__));
-               using var_has_sub=variant_has_substitute_impl<Attribute, T>;
-               std::cout<<"var_has_sub="<<demangle_fmt_type<var_has_sub>()<<";\n";
-               std::cout<<"var_has_sub::value="<<var_has_sub::type::value<<";\n";
-               using end=typename var_has_sub::end;
-               std::cout<<"end="<<demangle_fmt_type<end>()<<";\n";
-               using iter_1=typename var_has_sub::iter_1;
-               std::cout<<"iter_1="<<demangle_fmt_type<iter_1>()<<";\n";
-               constexpr auto same_iter_1_end=is_same<iter_1, end>::value;
-               std::cout<<"same_iter_1_end="<<same_iter_1_end<<";\n";
-               if constexpr(same_iter_1_end)
-               { using types=typename var_has_sub::types;
-                 using iter=typename mpl::find_if<types, is_substitute<T, mpl::_1>>::type;
-                 constexpr auto same_iter_end=is_same<iter, end>::value;
-                 std::cout<<"same_iter_end="<<same_iter_end<<";\n";
-               } 
-            }
-        };
-    }
-
-    template<typename T, typename Attribute, typename Enable>
-    void trace_fun_tmpl(detail::trace_tag<detail::tag_sub_same_impl>)
-    {
-        std::cout<<__func__<<"<tag_sub_same_impl>;\n";
-        std::cout<<"T="<<demangle_fmt_type<T>()<<";\n";
-        std::cout<<"Attribute="<<demangle_fmt_type<Attribute>()<<";\n";
-        std::cout<<"Enable="<<demangle_fmt_type<Enable>()<<";\n";
-        using same_T_Attribute_t=is_same<T, Attribute>;
-        constexpr auto same_T_Attribute_v=bool(same_T_Attribute_t());
-        std::cout<<"same_T_Attribute_v="<<same_T_Attribute_v<<";\n";
-        if constexpr (!same_T_Attribute_v)
-        {  //so the is_same<T, Attriute> in this's superclass is false;
-           //so check the alternative, is_substitute_impl<T, Attribute>:
-           using is_subs_impl=detail::is_substitute_impl<T, Attribute>;
-           std::cout<<"is_substitute::"<<__func__<<":__LINE__="<<__LINE__<<":is_subs_impl::trace_tmpl();\n";
-           is_subs_impl::trace_tmpl();
-           //examine the conditions for calling is_substitute_impl which inherits mpl::true_.
-           using is_seq_T=fusion::traits::is_sequence<T>;
-           std::cout<<"is_seq_T="<<is_seq_T::value<<";\n";
-           using is_seq_Attribute=fusion::traits::is_sequence<Attribute>;
-           std::cout<<"is_seq_Attribute="<<is_seq_Attribute::value<<";\n";
-           if constexpr (is_seq_T::value && is_seq_Attribute::value)
-           {
-             std::size_t constexpr size_T=fusion::result_of::size<T>::value;
-             std::cout<<":size_T="<<size_T<<";\n";
-             std::size_t constexpr size_Attribute=fusion::result_of::size<Attribute>::value;
-             std::cout<<":size_Attribute="<<size_Attribute<<";\n";
-             bool size_same=(size_T==size_Attribute);
-             std::cout<<":size_same="<<size_same<<";\n";
-             std::size_t constexpr min_size=std::min(size_T,size_Attribute);
-             using ndx_seq=
-               std::make_index_sequence
-               < min_size
-               >;
-             auto op_seq=
-               []<std::size_t... ndxs>
-               ( std::integer_sequence<std::size_t, ndxs...>
-               )
-               { std::cout<<"ndxs...\n";
-                 std::cout<<indent_buf_in;
-                 ( ( std::cout
-                   <<"ndx="<<ndxs<<"\n"
-                   <<indent_buf_in
-                   <<"  T[ndx]=\n"<<demangle_fmt_type<typename fusion::result_of::at_c<T,ndxs>::type>()<<";\n"
-                   <<"  Attribute[ndx]=\n"<<demangle_fmt_type<typename fusion::result_of::at_c<Attribute,ndxs>::type>()<<";\n"
-                   <<"  is_substitute<T[ndx],Attribute[ndx]>="
-                     << is_substitute
-                        < typename fusion::result_of::at_c<T,ndxs>::type
-                        , typename fusion::result_of::at_c<Attribute,ndxs>::type
-                        >::type::value<<";\n"
-                   <<indent_buf_out
-                   <<"  is_substitute<T[ndx],Attribute[ndx]>::trace_tmpl()=\n"
-                   , is_substitute
-                     < typename fusion::result_of::at_c<T,ndxs>::type
-                     , typename fusion::result_of::at_c<Attribute,ndxs>::type
-                     >::trace_tmpl()
-                   )
-                 , ...
-                 );
-                 std::cout<<indent_buf_out;
-                 std::cout<<"...ndxs\n";
-               };
-             op_seq(ndx_seq());
-           }
-           using mpl_equal=typename
-             mpl::equal
-             < T
-             , Attribute
-             , is_substitute
-             #ifdef USE_IS_SUBSTITUTE_1_78_0
-               < mpl::_1
-               , mpl::_2
-             #else
-               < mpl::_2
-               , mpl::_1
-             #endif
-               > 
-             >::type;
-           std::cout<<"mpl_equal="<<mpl_equal::value<<";\n";
-           //if constexpr (!mpl_equal::value)
-           {
-           //Trace why !mpl_equal::value:
-           //copy&past from boost/mpl/equal.hpp:struct equal_impl<Sequence1,Sequence2,Predicate>
-             using Sequence1 = T;
-             using Sequence2 = Attribute;
-             using Predicate = 
-               is_substitute
-             #ifdef USE_IS_SUBSTITUTE_1_78_0
-               < mpl::_1
-               , mpl::_2
-             #else
-               < mpl::_2
-               , mpl::_1
-             #endif
-               >;
-             typedef typename mpl::begin<Sequence1>::type first1_;
-             typedef typename mpl::begin<Sequence2>::type first2_;
-             typedef typename mpl::end<Sequence1>::type last1_;
-             typedef typename mpl::end<Sequence2>::type last2_;
-         
-             typedef mpl::aux::iter_fold_if_impl
-                 < first1_
-                 , first2_
-                 , mpl::next<>
-                 , mpl::protect< mpl::aux::equal_pred<Predicate,last1_,last2_> >
-                 , mpl::void_
-                 , mpl::always<mpl::false_>
-                 > fold_;
-
-             //using typename fold_::forward_step1;
-             //^fails compile.
-             typedef typename fold_::iterator iter1_;
-             typedef typename fold_::state iter2_;
-             using same_iter_last1_=is_same<iter1_,last1_>;
-             using same_iter_last2_=is_same<iter2_,last2_>;
-             std::cout<<":LINE="<<__LINE__<<":same_iter_last1_::value="<<same_iter_last1_::value<<";\n";
-             std::cout<<":LINE="<<__LINE__<<":same_iter_last2_::value="<<same_iter_last2_::value<<";\n";
-             if constexpr(!same_iter_last1_::value)
-             {
-               std::cout<<":LINE="<<__LINE__<<":iter1_="<<demangle_fmt_type<iter1_>()<<";\n";
-             }
-             if constexpr(!same_iter_last2_::value)
-             {
-               std::cout<<":LINE="<<__LINE__<<":iter2_="<<demangle_fmt_type<iter2_>()<<";\n";
-             }
-             typedef mpl::and_
-                 < same_iter_last1_
-                 , same_iter_last2_
-                 > result_;
-             //std::cout<<":LINE="<<__LINE__<<":result_="<<demangle_fmt_type<result_>()<<";\n";
-             std::cout<<":LINE="<<__LINE__<<":result_::type::value="<<result_::type::value<<";\n";
-           #if 0
-             using is_iter1_t=fusion::is_fusion_iterator<iter1_>;
-             std::cout<<"demangle is_iter1_t="<<demangle_fmt_type<is_iter1_t>()<<";\n";
-             using is_iter2_t=fusion::is_fusion_iterator<iter2_>;
-             std::cout<<"demangle is_iter2_t="<<demangle_fmt_type<is_iter2_t>()<<";\n";
-             bool constexpr is_iter1_v=is_iter1_t::value;
-             bool constexpr is_iter2_v=is_iter2_t::value;
-             std::cout<<":LINE="<<__LINE__<<":is_iter1_v="<<is_iter1_v<<":is_iter2_v="<<is_iter2_v<<";\n";
-             if constexpr(is_iter1_v && is_iter2_v)
-             {
-               using deref1_=typename mpl::deref<iter1_>::type;
-               std::cout<<":LINE="<<__LINE__<<":deref1_=\n"<<demangle_fmt_type<deref1_>()<<";\n";
-               using deref2_=typename mpl::deref<iter2_>::type;
-               std::cout<<":LINE="<<__LINE__<<":deref2_=\n"<<demangle_fmt_type<deref2_>()<<";\n";
-               using is_sub_derefs=is_substitute<deref1_,deref2_>;
-               std::cout<<":LINE="<<__LINE__<<":is_sub_derefs="<<demangle_fmt_type<is_sub_derefs>()<<";\n";
-               std::cout<<":LINE="<<__LINE__<<":is_sub_derefs::type="<<demangle_fmt_type<typename is_sub_derefs::type>()<<";\n";
-               std::cout<<":LINE="<<__LINE__<<":is_sub_derefs::trace_tmpl=\n";
-               is_sub_derefs::trace_tmpl();
-             }
-           #endif
-           }
+        #define USE_IS_SUBSTITUTE_IMPL_ENABLERS_TRACE_TMPL
+        #ifdef USE_IS_SUBSTITUTE_IMPL_ENABLERS_TRACE_TMPL
+            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',__func__,"<T,Attribute>()"));
+            std::cout<<":T=\n"<<demangle_fmt_type<T>()<<";\n";
+            std::cout<<":Attribute=\n"<<demangle_fmt_type<Attribute>()<<";\n";
+            detail::is_substitute_impl_enabler<T, Attribute, detail::enable_are_seq>::trace_tmpl();
+          #ifdef USE_IS_SUBSTITUTE_IMPL_VAR2
+            detail::is_substitute_impl_enabler<T, Attribute, detail::enable_are_var>::trace_tmpl();
+          #endif
+          #ifdef USE_IS_SUBSTITUTE_IS_VARIANT_ATTRIBUTE
+            detail::is_substitute_impl_enabler<T, Attribute, detail::enable_is_variant_Attribute>::trace_tmpl();
+          #endif//USE_IS_SUBSTITUTE_IS_VARIANT_ATTRIBUTE
+            detail::is_substitute_impl_enabler<T, Attribute, detail::enable_are_container>::trace_tmpl();
+        #endif//USE_IS_SUBSTITUTE_IMPL_ENABLERS_TRACE_TMPL
         }
-    }
     
-    template <typename T, typename Attribute, typename Enable /*= void*/>
+    }//detail namespace
+
+      template 
+      < typename T
+      , typename Attribute
+      , typename Enable /*= void*/
+      >
     struct is_substitute
-        : mpl::or_<
-              is_same<T, Attribute>,
-              detail::is_substitute_impl<T, Attribute>> 
+      : mpl::or_
+        < is_same_enough<T, Attribute>
+        , detail::is_substitute_impl<T, Attribute>
+        >
     {
-        static auto constexpr struct_tag=detail::tag_sub_same_impl;
-        static auto constexpr class_label="is_substitute:or_<is_same,is_substitute_impl>";
-        static void trace_tmpl()
+        static bool trace_tmpl()
         {  
-           boost::trace_scope ts(stringify(class_label,":LINE=",__LINE__));
-           trace_fun_tmpl<T,Attribute,Enable>(detail::trace_tag<struct_tag>{});
+           auto constexpr this_type_name="is_substitute<T,Attribute,Enable=void>";
+           boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name,"::",__func__));
+           std::cout<<"T="<<demangle_fmt_type<T>()<<";\n";
+           std::cout<<"Attribute="<<demangle_fmt_type<Attribute>()<<";\n";
+           std::cout<<"Enable="<<demangle_fmt_type<Enable>()<<";\n";
+           using is_same_enough_T_Attribute=is_same_enough<T, Attribute>;
+           bool result=is_same_enough_T_Attribute::value;
+           is_same_enough_T_Attribute::trace_tmpl();
+           std::cout<<"is_same_enough<T,Attribute>="<<is_same_enough_T_Attribute()<<";\n";
+           if constexpr (!is_same_enough_T_Attribute())
+           { //so the is_same_enough<T, Attriute> in this's superclass is false;
+             //so check the alternative, detail::is_substitute_impl<T, Attribute>:
+             boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',this_type_name,":!is_same_enough_T_Attribute"));
+             using is_substitute_impl_T_Attribute=detail::is_substitute_impl<T, Attribute>;
+             result=is_substitute_impl_T_Attribute::value;
+             is_substitute_impl_T_Attribute::trace_tmpl();
+             std::cout<<":is_substitute_impl<T,Attribute>="<<result<<";\n";
+           }
+           return result;
         }
     };
 
@@ -420,10 +561,9 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
     struct is_substitute_trace
         : is_substitute<T, Attribute, Enable>
     {
-        static void trace_tmpl()
-        { std::cout<<"is_substitute_trace<T,Attribute,Enable>:LINE="<<__LINE__<<";\n";
-          auto constexpr struct_tag=is_substitute<T,Attribute,Enable>::struct_tag;
-          is_substitute<T,Attribute,Enable>::trace_tmpl();
+        static bool trace_tmpl()
+        { std::cout<<FILE_SHORT<<':'<<__LINE__<<":is_substitute_trace<T,Attribute,Enable>;\n";
+          return is_substitute<T,Attribute,Enable>::trace_tmpl();
         }
     };
     // for reference T
@@ -501,7 +641,6 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
               , has_kv_in_map<p_key, p_value, Attribute>
             >::type
         type;
-        
     };
 
     template <typename T, typename Attribute>
@@ -509,4 +648,5 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
       : is_substitute<T, Attribute> {};
 }}}}
 
+#pragma pop_macro("FILE_SHORT")
 #endif

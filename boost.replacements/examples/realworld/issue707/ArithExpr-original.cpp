@@ -12,6 +12,7 @@
 #include <boost/hana/functional/overload.hpp>
 #include <boost/spirit/home/x3.hpp>
 #include <boost/spirit/home/x3/support/ast/variant.hpp>
+#include <boost/variant/apply_visitor.hpp>
 
 using namespace boost::spirit;
 namespace hana = boost::hana;
@@ -143,6 +144,7 @@ double CalcArithExpr(Iterator const &first, Iterator last) {
 }
 
 int main(int argc, char *argv[]) {
+    std::cout<<std::boolalpha;
     auto expr = std::string{"-(4.5 + 5e-1) * 2.22 - 9.1 / 3.45"};
     std::cout << CalcArithExpr(expr.begin(), expr.end()) << std::endl;
 }
