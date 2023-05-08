@@ -6,8 +6,12 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 ==============================================================================*/
-#if !defined(BOOST_SPIRIT_X3_PARSER_OCTOBER_16_2008_0254PM)
-#define BOOST_SPIRIT_X3_PARSER_OCTOBER_16_2008_0254PM
+#if !defined(BOOST_SPIRIT_X3_CORE_PARSER_OCTOBER_16_2008_0254PM)
+#define BOOST_SPIRIT_X3_CORE_PARSER_OCTOBER_16_2008_0254PM
+//#define BOOST_SPIRIT_X3_CORE_PARSER_TRACE
+#ifdef BOOST_SPIRIT_X3_CORE_PARSER_TRACE
+  #define BOOST_SPIRIT_X3_CORE_PARSER_FILE "unfold_left/*/core/parser.hpp"
+#endif
 
 #include <boost/mpl/bool.hpp>
 #include <boost/type_traits/is_base_of.hpp>
@@ -30,9 +34,6 @@
 #if !defined(BOOST_SPIRIT_X3_NO_RTTI)
 #include <typeinfo>
 #endif
-
-#pragma push_macro("FILE_SHORT")
-#define FILE_SHORT "unfold_left/*/core/parser.hpp"
 
 namespace boost { namespace spirit { namespace x3
 {
@@ -76,12 +77,12 @@ namespace boost { namespace spirit { namespace x3
     {
         std::ostream& operator()(std::ostream& sout, Parser const& p) const
         {
-            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":get_info::"<<__func__<<"(std::ostream& sout, Parser const& p);\n";
+            //std::cout<<BOOST_SPIRIT_X3_CORE_PARSER_FILE<<':'<<__LINE__<<":get_info::"<<__func__<<"(std::ostream& sout, Parser const& p);\n";
             return sout<<demangle_fmt_type<Parser>();
         }
         std::string operator()(Parser const& p) const
         {
-            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":get_info::"<<__func__<<"(Parser const& p);\n";
+            //std::cout<<BOOST_SPIRIT_X3_CORE_PARSER_FILE<<':'<<__LINE__<<":get_info::"<<__func__<<"(Parser const& p);\n";
             return demangle_fmt_type<Parser>();
         }
     };
@@ -250,7 +251,7 @@ namespace boost { namespace spirit { namespace x3
           )
           : sub_parsers(sp) 
           {
-            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":"<<__func__<<":sub_parsers="<<demangle_fmt_type(sub_parsers)<<";\n";
+            //std::cout<<BOOST_SPIRIT_X3_CORE_PARSER_FILE<<':'<<__LINE__<<":"<<__func__<<":sub_parsers="<<demangle_fmt_type(sub_parsers)<<";\n";
           }
          
         static auto constexpr indices=std::index_sequence_for<SubParsers...>{};
@@ -282,7 +283,7 @@ namespace boost { namespace spirit { namespace x3
         
         std::ostream& operator()(std::ostream& sout, Parser const& p) const
         {
-            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":get_info::"<<__func__<<"(std::ostream& sout, Parser const& p);\n";
+            //std::cout<<BOOST_SPIRIT_X3_CORE_PARSER_FILE<<':'<<__LINE__<<":get_info::"<<__func__<<"(std::ostream& sout, Parser const& p);\n";
             sout<<demangle_fmt_type<Parser>();
             sout<<"\n";
             auto parser_what=[&p,&sout]<std::size_t Index>()
@@ -306,13 +307,13 @@ namespace boost { namespace spirit { namespace x3
         }
         std::string operator()(Parser const& p) const
         {
-            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":get_info::"<<__func__<<"(Parser const& p);\n";
+            //std::cout<<BOOST_SPIRIT_X3_CORE_PARSER_FILE<<':'<<__LINE__<<":get_info::"<<__func__<<"(Parser const& p);\n";
             std::ostringstream oss;
               boost::iostreams::indent_scoped_ostreambuf<char>
             indent_outbuf(oss,2);
             this->operator()(oss,p);
             std::string result=oss.str();
-            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":result=\n"<<result<<";\n";
+            //std::cout<<BOOST_SPIRIT_X3_CORE_PARSER_FILE<<':'<<__LINE__<<":result=\n"<<result<<";\n";
             return result;
         }
     };
@@ -330,14 +331,14 @@ namespace boost { namespace spirit { namespace x3
           Derived<SubParsers...>
           ;
       //#define TRACE_N_ARY_MAKE_PARSER
-      #ifdef TRACE_N_ARY_MAKE_PARSER
-        boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',__func__));
+      #if defined(BOOST_SPIRIT_X3_CORE_PARSER_TRACE) && defined(TRACE_N_ARY_MAKE_PARSER)
+        boost::trace_scope ts(stringify(BOOST_SPIRIT_X3_CORE_PARSER_FILE,':',__LINE__,':',__func__));
         std::cout
           <<":derived_parser_t=\n"<<demangle_fmt_type<derived_parser_t>()<<";\n"
           ;
       #endif//TRACE_N_ARY_MAKE_PARSER
         derived_parser_t derived_parser_v(sub_parsers);
-      #ifdef TRACE_N_ARY_MAKE_PARSER
+      #if defined(BOOST_SPIRIT_X3_CORE_PARSER_TRACE) && defined(TRACE_N_ARY_MAKE_PARSER)
         get_info<derived_parser_t> get_info_v;
         std::cout<<__LINE__<<":get_info=\n"<<get_info_v(std::cout, derived_parser_v)<<";\n";
       #endif//TRACE_N_ARY_MAKE_PARSER
@@ -354,8 +355,8 @@ namespace boost { namespace spirit { namespace x3
       )
       { auto sub_parsers=
           n_ary_sub_parsers<Derived>( left, right);
-      #if 0
-        std::cout<<FILE_SHORT<<':'<<__LINE__<<":"<<__func__<<";\n"
+      #if defined(BOOST_SPIRIT_X3_CORE_PARSER_TRACE)
+        std::cout<<BOOST_SPIRIT_X3_CORE_PARSER_FILE<<':'<<__LINE__<<":"<<__func__<<";\n"
           <<":type<left>=\n"<<demangle_fmt_type(left)<<";\n"
           <<":type<right>=\n"<<demangle_fmt_type(right)<<";\n"
           <<":type<sub_parsers>=\n"<<demangle_fmt_type(sub_parsers)<<";\n"
@@ -467,5 +468,5 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
         : mpl::bool_<has_attribute<Left, Context>::value ||
                 has_attribute<Right, Context>::value> {};
 }}}}
-#pragma pop_macro("FILE_SHORT")
+
 #endif

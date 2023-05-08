@@ -15,23 +15,100 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
       < template <typename...> class C //a variant container for attributes
       , typename... A
       >
-    struct attribute_of_variant
-      { 
-          using no_unused=
+    struct attribute_of_alternative
+      {
+          using As_type=
+            mp11::mp_list<A...>
+            ;
+          using unique_type=
+            mp11::mp_unique
+            <  As_type
+            >
+            //filer out duplicates
+            ;
+          using unique_size=
+            mp11::mp_size
+            < unique_type
+            >
+            ;
+          using used_type=
             mp11::mp_copy_if
-            < mp11::mp_list<A...>
+            < unique_type
             , traits::not_unused
             >
+            //filter out unused_type's
             ;
-          using no_dups=
-            mp11::mp_unique
-            < no_unused
+          using used_size=
+            mp11::mp_size
+            < used_type
             >
             ;
+            static constexpr std::size_t 
+          unused_size=
+              unique_size::value
+            - used_size::value
+            //number of unused_types in unique_type (at most 1 since duplicates filtered out)
+            ;
+            template
+            < typename List
+            >
+            struct
+          rename_C
+            ;
+            template
+            < typename T
+            , typename... Ts
+            >
+            struct
+          rename_C
+            < mp11::mp_list<T,Ts...>
+            >
+            {
+                using
+              type=
+                C<T,Ts...>
+                ;
+            };
+            template
+            < typename T
+            >
+            struct
+          rename_C
+            < mp11::mp_list<T>
+            >
+            {
+                using
+              type=
+                T
+                ;
+            };
+            template
+            <
+            >
+            struct
+          rename_C
+            < mp11::mp_list<>
+            >
+            {
+                using
+              type=
+                unused_type
+                ;
+            };
+            using
+          rename_used_type=
+              typename 
+            rename_C
+            < used_type
+            >::type
+            ;
           using type=
-            mp11::mp_rename
-            < no_dups
-            , C
+            mp11::mp_if_c
+            < bool(unused_size>0 && used_size::value>0)
+            , boost::optional
+              < rename_used_type
+              >
+            , rename_used_type
             >
             ;
       };
@@ -41,17 +118,66 @@ namespace boost { namespace spirit { namespace x3 { namespace detail
       >
     struct attribute_of_sequence
       { 
-          using no_unused=
+          using As_type=
+            mp11::mp_list<A...>
+            ;
+          using used_type=
             mp11::mp_copy_if
-            < mp11::mp_list<A...>
+            < As_type
             , traits::not_unused
             >
             ;
-          using type=
-            mp11::mp_rename
-            < no_unused
-            , C
+            template
+            < typename List
             >
+            struct
+          rename_C
+            ;
+            template
+            < typename T
+            , typename... Ts
+            >
+            struct
+          rename_C
+            < mp11::mp_list<T,Ts...>
+            >
+            {
+                using
+              type=
+                C<T,Ts...>
+                ;
+            };
+            template
+            < typename T
+            >
+            struct
+          rename_C
+            < mp11::mp_list<T>
+            >
+            {
+                using
+              type=
+                T
+                ;
+            };
+            template
+            <
+            >
+            struct
+          rename_C
+            < mp11::mp_list<>
+            >
+            {
+                using
+              type=
+                unused_type
+                ;
+            };
+          using type=
+              typename
+            rename_C
+            < used_type
+            >::type
             ;
       };
 }}}}

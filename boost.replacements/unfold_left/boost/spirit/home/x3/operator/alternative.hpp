@@ -7,55 +7,46 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 =============================================================================*/
+#define BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
+#ifdef BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
+  #define BOOST_SPIRIT_X3_ALTERNATIVE_FILE "unfold_left/*/operator/alternative.hpp"
+#endif//BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
 
 #include <boost/utility/trace_scope.hpp>
 #include <boost/iostreams/utility/templ_expr/demangle_fmt_type.hpp>
 
 #include <boost/spirit/home/x3/core/parser.hpp>
 #include <boost/spirit/home/x3/support/unused.hpp>
-#ifdef USE_UNFOLD_LEFT
-  #ifdef USE_COLLAPSE_LEFT
-    #include <boost/spirit/home/x3/support/traits/attribute_of_binary.hpp>
-  #endif//USE_COLLAPSE_LEFT
-  #include <boost/spirit/home/x3/support/ast/get_put_index_variant.hpp>
-#else
+#ifdef USE_COLLAPSE_LEFT
   #include <boost/spirit/home/x3/support/traits/attribute_of_binary.hpp>
   #include <boost/spirit/home/x3/operator/detail/alternative.hpp>
-  #include <boost/variant/variant_fwd.hpp>
-#endif//USE_UNFOLD_LEFT
-
-#pragma push_macro("FILE_SHORT")
-#define FILE_SHORT "unfold_left/*/operator/alternative.hpp"
+  //no need for get_put_index_variant.hpp because it's assumed that
+  //the variant attribute can accept any value produced by any of SubParsers.
+#else
+  #include <boost/spirit/home/x3/support/ast/get_put_index_variant.hpp>
+#endif//USE_COLLAPSE_LEFT
 
 namespace boost { namespace spirit { namespace x3
 {
-    template
-  #ifdef USE_UNFOLD_LEFT
-    < typename... SubParsers
-  #else
-    < typename Left, typename Right
-  #endif
-    >
+      template
+      < typename... SubParsers
+      >
     struct alternative
-  #ifdef USE_UNFOLD_LEFT
     : n_ary_parser<alternative<SubParsers...>>
-  #else
-    : binary_parser<Left, Right, alternative<Left, Right>>
-  #endif
     {
       #ifdef USE_UNFOLD_LEFT
         typedef n_ary_parser<alternative<SubParsers...>> base_type;
         constexpr alternative(typename base_type::sub_parsers_t const& sub_parsers)
         : base_type(sub_parsers)
         {
-          //std::cout<<FILE_SHORT<<':'<<__LINE__<<":"<<__func__<<":base_type="<<demangle_fmt_type<base_type>()<<";\n";
+          //std::cout<<BOOST_SPIRIT_X3_ALTERNATIVE_FILE<<':'<<__LINE__<<":"<<__func__<<":base_type="<<demangle_fmt_type<base_type>()<<";\n";
         }
       #else
         typedef binary_parser<Left, Right, alternative<Left, Right>> base_type;
         constexpr alternative(Left const&left, Right const&right)
         : base_type(left,right)
         {
-          //std::cout<<FILE_SHORT<<':'<<__LINE__<<":"<<__func__<<":base_type="<<demangle_fmt_type<base_type>()<<";\n";
+          //std::cout<<BOOST_SPIRIT_X3_ALTERNATIVE_FILE<<':'<<__LINE__<<":"<<__func__<<":base_type="<<demangle_fmt_type<base_type>()<<";\n";
         }
       #endif
   #ifdef USE_UNFOLD_LEFT
@@ -86,7 +77,7 @@ namespace boost { namespace spirit { namespace x3
                  , attr
                  )
               );
-            //std::cout<<FILE_SHORT<<':'<<__LINE__<<":alternative:"<<__func__<<"(unused attr):result="<<result<<";\n";
+            //std::cout<<BOOST_SPIRIT_X3_ALTERNATIVE_FILE<<':'<<__LINE__<<":alternative:"<<__func__<<"(unused attr):result="<<result<<";\n";
             return result;
         }
           template
@@ -106,14 +97,24 @@ namespace boost { namespace spirit { namespace x3
           ) const
         {
             bool result = 
-              ( false
+              (  false
               || ...
+            #ifdef USE_COLLAPSE_LEFT
+              || detail::parse_alternative
+                 ( this->template sub_parser<Indices>()
+                 , first
+            #else
               || this->template sub_parser<Indices>().parse
                  ( first
+            #endif
                  , last
                  , context
                  , rcontext
+               #ifdef USE_COLLAPSE_LEFT
+                 , attr
+               #else
                  , put<Indices>(attr)
+               #endif
                  )
               );
             std::cout<<"alternative:"<<__func__<<"(Attribute& attr):result="<<result<<";\n";
@@ -127,8 +128,8 @@ namespace boost { namespace spirit { namespace x3
             Iterator& first, Iterator const& last
           , Context const& context, RContext& rcontext, unused_type attr) const
         {
-          #if 0
-            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',__func__,"(unused_type)"));
+          #ifdef BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
+            boost::trace_scope ts(stringify(BOOST_SPIRIT_X3_ALTERNATIVE_FILE,':',__LINE__,':',__func__,"(unused_type)"));
             std::cout
             #ifdef USE_UNFOLD_LEFT
               <<"\n:demangle_fmt_type(sub_parsers)=\n"<<demangle_fmt_type(base_type::sub_parsers)
@@ -148,9 +149,15 @@ namespace boost { namespace spirit { namespace x3
             , base_type::indices
             );
           #else
-            bool result= this->left.parse(first, last, context, rcontext, attr)
-               || this->right.parse(first, last, context, rcontext, attr);
+            bool result=this->left.parse(first, last, context, rcontext, attr);
+            if(!result)
+            {
+               result=this->right.parse(first, last, context, rcontext, attr);
+            }
           #endif//USE_UNFOLD_LEFT
+          #ifdef BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
+            std::cout<<"result="<<result<<";\n";
+          #endif
             return result;
         }
         template <typename Iterator, typename Context
@@ -159,8 +166,8 @@ namespace boost { namespace spirit { namespace x3
             Iterator& first, Iterator const& last
           , Context const& context, RContext& rcontext, Attribute& attr) const
         {
-          #if 1
-            boost::trace_scope ts(stringify(FILE_SHORT,':',__LINE__,':',__func__,"(..., Attribute&)"));
+          #ifdef BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
+            boost::trace_scope ts(stringify(BOOST_SPIRIT_X3_ALTERNATIVE_FILE,':',__LINE__,':',__func__,"(..., Attribute&)"));
             std::cout
             #ifdef USE_UNFOLD_LEFT
               <<":demangle_fmt_type(sub_parsers)=\n"<<demangle_fmt_type(base_type::sub_parsers)<<";\n"
@@ -181,37 +188,34 @@ namespace boost { namespace spirit { namespace x3
             , base_type::indices
             );
           #else
-            std::cout<<"parse<Left>...\n";
-            bool result=detail::parse_alternative(this->left, first, last, context, rcontext, attr);
-            std::cout<<"result<Left>="<<result<<";\n";
-            if(!result)
-            {
-              std::cout<<"parse<Right>...\n";
-               result=detail::parse_alternative(this->right, first, last, context, rcontext, attr);
-               std::cout<<"result<Right>="<<result<<";\n";
-            }
+            #ifdef BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
+              std::cout<<"parse<Left>...\n";
+            #endif
+              bool result=detail::parse_alternative(this->left, first, last, context, rcontext, attr);
+            #ifdef BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
+              std::cout<<"result<Left>="<<result<<";\n";
+            #endif
+              if(!result)
+              {
+                #ifdef BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
+                  std::cout<<"parse<Right>...\n";
+                #endif
+                  result=detail::parse_alternative(this->right, first, last, context, rcontext, attr);
+                #ifdef BOOST_SPIRIT_X3_ALTERNATIVE_TRACE
+                  std::cout<<"result<Right>="<<result<<";\n";
+                #endif
+              }
           #endif//USE_UNFOLD_LEFT
             return result;
         }
     };
 
-  #ifdef USE_UNFOLD_LEFT
     template <typename Left, typename Right>
     constexpr auto
     operator|(Left const& left, Right const& right)
     {
         return n_ary_make_parser<alternative>( as_parser(left), as_parser(right) );
     }
-  #else
-    template <typename Left, typename Right>
-    constexpr alternative<
-        typename extension::as_parser<Left>::value_type
-      , typename extension::as_parser<Right>::value_type>
-    operator|(Left const& left, Right const& right)
-    {
-        return { as_parser(left), as_parser(right) };
-    }
-  #endif//USE_UNFOLD_LEFT
 }}}
 #ifdef USE_STD_VARIANT
   #include <boost/spirit/home/x3/support/ast/std_variant.hpp>
@@ -223,14 +227,13 @@ namespace boost { namespace spirit { namespace x3
 
 namespace boost { namespace spirit { namespace x3 { namespace traits
 {
-  #ifdef USE_UNFOLD_LEFT
     template <typename Context, typename... SubParsers>
     struct attribute_of<x3::alternative<SubParsers...>, Context>
     {
         using 
       type=
       #ifdef USE_COLLAPSE_LEFT
-        typename x3::detail::attribute_of_variant
+        typename x3::detail::attribute_of_alternative
         < SPIRIT_X3_ALTERNATIVE_VARIANT
         , typename attribute_of<SubParsers,Context>::type...
         >::type
@@ -241,10 +244,4 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
       #endif
         ;
     };
-  #else
-    template <typename Left, typename Right, typename Context>
-    struct attribute_of<x3::alternative<Left, Right>, Context>
-        : x3::detail::attribute_of_binary<SPIRIT_X3_ALTERNATIVE_VARIANT, x3::alternative, Left, Right, Context> {};
-  #endif//USE_UNFOLD_LEFT
 }}}}
-#pragma pop_macro("FILE_SHORT")
