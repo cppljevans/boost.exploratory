@@ -1,9 +1,39 @@
+#pragma once
+//Dependencies:
+//  Following code uses lexertl library mentioned here:
+/*
+https://www.boost.org/doc/libs/1_83_0/libs/spirit/doc/html/spirit/lex/tutorials/lexer_tutorials.html
+http://www.benhanson.net/lexertl.html
+ */
+//Purpose:
+//
+//  Parse a text stream with confix syntax...
+/*
+https://github.com/avnomad/dop-parser
+ */
+//  The terminology used there is translated to terms used here as follows:
+//    operand -> operand
+//    initiator -> open
+//    terminator -> close
+//    separator -> split
+//  It's assumed each open delimiter is matched with
+//  the corresponding close delimiter.
+//
+//  ...and while parsing, output a formatted version of input
+//  which highlights the structure of the input 
+//  by using indentation and newlines.
+//
+//CodeDerivedFrom:
+/*
+https://github.com/BenHanson/lexertl14/blob/master/examples/wc/main.cpp
+ */
+//====================
 //#include <lexertl/debug.hpp>
 #include <lexertl/generator.hpp>
 #include <lexertl/lookup.hpp>
 namespace//unnamed namespace
 {
-    enum class fmt_state{eoi, word, open, close, split, ws, newline};
+    enum class fmt_state{eoi, operand, open, close, split, ws, newline};
     lexertl::rules rules_;
     lexertl::state_machine sm_;
 
@@ -19,7 +49,7 @@ namespace//unnamed namespace
         rules_.insert_macro("nonws", "[^ \t\n"+delims_all+"]");
         rules_.push
         ( "{nonws}+"
-        , (const unsigned short)fmt_state::word
+        , (const unsigned short)fmt_state::operand
         );
         rules_.push
         ( "["+delims_open+"]"
@@ -68,18 +98,22 @@ fmt
   ; lexertl::cmatch results_(inp_beg,inp_end)
   ; std::ostringstream tmp_out
   ; boost::iostreams::indent_scoped_ostreambuf<char>
-    indent_outbuf(tmp_out,2)
-  ;
-    do
+    indent_outbuf
+    ( tmp_out
+    , 2
+      //indentation amount.
+      //This allows space for 1 char delimiter + 1 space=2
+    )
+  ; do
     {
         lexertl::lookup(sm_, results_);
         switch (results_.id)
         {
         case (int)fmt_state::eoi:
             break;
-        case (int)fmt_state::word:
+        case (int)fmt_state::operand:
             tmp_out
-              //<<":word="
+              //<<":operand="
               <<results_.str()
               <<' '
               ;
