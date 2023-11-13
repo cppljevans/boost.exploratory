@@ -27,6 +27,8 @@ https://github.com/avnomad/dop-parser
 /*
 https://github.com/BenHanson/lexertl14/blob/master/examples/wc/main.cpp
  */
+//ToDo:
+//  remove output of default allocators for std containers.
 //====================
 //#include <lexertl/debug.hpp>
 #include <lexertl/generator.hpp>
@@ -97,12 +99,15 @@ fmt
   ; const char* inp_end=inp_beg+inp.size()
   ; lexertl::cmatch results_(inp_beg,inp_end)
   ; std::ostringstream tmp_out
+  ; auto len_delims=1
+  ; std::string spacers=" "
+  ; auto len_spacers=spacers.size()
   ; boost::iostreams::indent_scoped_ostreambuf<char>
     indent_outbuf
     ( tmp_out
-    , 2
+    , len_delims+len_spacers
       //indentation amount.
-      //This allows space for 1 char delimiter + 1 space=2
+      //This allows space for delimiter + spaceers
     )
   ; do
     {
@@ -115,14 +120,15 @@ fmt
             tmp_out
               //<<":operand="
               <<results_.str()
-              <<' '
+              <<spacers
               ;
             break;
         case (int)fmt_state::open:
             tmp_out
               <<"\n"
               //<<":open="
-              <<results_.str()<<" "
+              <<results_.str()
+              <<spacers
               <<indent_buf_in
               ;
             break;
@@ -139,7 +145,8 @@ fmt
               <<indent_buf_out
               <<"\n"
               //<<"split="
-              <<results_.str()<<" "
+              <<results_.str()
+              <<spacers
               <<indent_buf_in
               ;
             break;
