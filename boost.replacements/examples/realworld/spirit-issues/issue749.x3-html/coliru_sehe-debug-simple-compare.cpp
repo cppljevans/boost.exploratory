@@ -114,7 +114,6 @@ BOOST_FUSION_ADAPT_STRUCT(Ast::html_tag, header, children)
 
 namespace Parser 
 {
-    struct tag_block__tag;
     struct html_element__tag;
   #ifdef USE_SEMANTIC_ACTIONS
       struct
@@ -155,12 +154,12 @@ namespace Parser
       = 
       (  '<' 
       >> tag_name_ 
-  #ifdef USE_SEMANTIC_ACTIONS
-         [ tag_name_begin_func
-         ]
-  #endif//USE_SEMANTIC_ACTIONS
       >> '>'
       )
+  #ifdef USE_SEMANTIC_ACTIONS
+      [ tag_name_begin_func
+      ]
+  #endif//USE_SEMANTIC_ACTIONS
       ;
       auto 
     tag_footer_
@@ -182,27 +181,50 @@ namespace Parser
     html_element_ = "HtmlElement"
       ;
       auto
-    tag_block__def =
+    tag_block__def= 
          tag_header_
       >> *html_element_ 
       >> tag_footer_
       ;
-  #ifdef USE_SEMANTIC_ACTIONS
-      x3::rule<tag_block__tag, Ast::html_tag>
-    tag_block_    = "TagBlock"
+  #ifndef USE_SEMANTIC_ACTIONS
+    //#define USE_AS_ATTR_TAG
+    #ifdef USE_AS_ATTR_TAG
+    struct tag_block__tag
+      //This tag name was cp'ed from the OriginalSource where it was the
+      //rule_id for the tag_block_ rule.
+      //
+      //Such a rule is unneeded, but the tag name is useful for
+      //defining a specific as_attr below.
+      //
+      //Otherwise, it's completely arbitrary as long as no other
+      //as_attr with same otherwise args is used.
+      //
+      //Actually, in case there are no otherwise args used,
+      //this could be eliminated and the default tag used.
+      //This can be seen by undefining USE_AS_ATTR_TAG
+      //and seeing the same results.
       ;
-  #else
+    #endif
+  #endif//USE_SEMANTIC_ACTIONS
       auto
     tag_block_=
+  #ifdef USE_SEMANTIC_ACTIONS
+      tag_block__def
+      //transform attribute_of tag_block__def to Ast::html_tag
+      //using above semantic actions.
+  #else
       x3::traits::as_attr
       < Ast::html_tag
+    #ifdef USE_AS_ATTR_TAG
       , x3::traits::transform_tag_id<tag_block__tag>
+    #endif
       >
       [ tag_block__def
       ]
-      //transform attribute_of tag_block__def to an Ast::html_tag type.
-      ;
+      //transform attribute_of tag_block__def to Ast::html_tag
+      //using make_transform_attribute.hpp as_attr.
   #endif//USE_SEMANTIC_ACTIONS
+      ;
     auto html_element__def = 
         html_content_
       | tag_block_
@@ -219,11 +241,7 @@ namespace Parser
   #endif//USE_SEMANTIC_ACTIONS
       ;
     
-  #ifdef USE_SEMANTIC_ACTIONS
-    BOOST_SPIRIT_DEFINE(tag_block_, html_element_)
-  #else
-    BOOST_SPIRIT_DEFINE(html_element_)
-  #endif//USE_SEMANTIC_ACTIONS
+  BOOST_SPIRIT_DEFINE(html_element_)
 }
 #ifndef USE_SEMANTIC_ACTIONS
 namespace boost 
@@ -245,7 +263,9 @@ namespace traits
     transform_attribute_tagged
       < Ast::html_tag
       , ToFrom
+    #ifdef USE_AS_ATTR_TAG
       , x3::traits::transform_tag_id<Parser::tag_block__tag>
+    #endif
       >
       {
         using FromTo=Ast::html_tag;
