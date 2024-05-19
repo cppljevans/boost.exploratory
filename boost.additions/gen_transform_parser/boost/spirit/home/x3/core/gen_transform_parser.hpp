@@ -4,14 +4,17 @@
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 ==============================================================================*/
-#if !defined(BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_JANUARY_01_2022_0853AM)
-#define BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_JANUARY_01_2022_0853AM
-//#define BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
-#ifdef BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
-  #define BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_FILE "make_transform_parser/*/core/make_transform_parser.hpp"
+#if !defined(BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_JANUARY_01_2022_0853AM)
+#define BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_JANUARY_01_2022_0853AM
+//#define BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
+#ifdef BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
+  #define BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE "gen_transform_parser/*/core/gen_transform_parser.hpp"
+  #include <boost/spirit/home/x3/support/traits/print_attribute.hpp>
 #endif
-#include <boost/spirit/home/x3/nonterminal/rule_fwd.hpp>
-#include <boost/spirit/home/x3/nonterminal/detail/rule_id.hpp>
+#if defined(USE_DEBUG)||defined(USE_RULE_DEFN)
+  #include <boost/spirit/home/x3/nonterminal/rule_fwd.hpp>
+  #include <boost/spirit/home/x3/nonterminal/detail/rule_id.hpp>
+#endif
 #include <boost/spirit/home/x3/support/traits/transform_attribute_tagged.hpp>
 #include <boost/spirit/home/x3/support/traits/attribute_of.hpp>
 #include <boost/spirit/home/x3/core/parse.hpp>
@@ -64,10 +67,10 @@ struct transform_parser_attribute_crtp
               , TransformTag
               >;
           using transform_type=typename transform::type;
-        #ifdef BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
+        #ifdef BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
           boost::trace_scope ts
             ( stringify
-              ( BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_FILE
+              ( BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE
               , ':', __LINE__
               , ':', __func__,"(,Ctx&,Rctx&,ToAttribute&)"
               )
@@ -78,7 +81,7 @@ struct transform_parser_attribute_crtp
           std::cout<<":from_attribute_type=\n"<<demangle_fmt_type<from_attribute_type>()<<";\n";          
           std::cout<<":transform_type=\n"<<demangle_fmt_type<transform_type>()<<";\n";
           //transform::trace_tmpl();
-        #endif//BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
+        #endif//BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
             transform_type 
           from_attr
             =transform::pre
@@ -97,18 +100,17 @@ struct transform_parser_attribute_crtp
             , r_ctx
             , from_attr
             );
-        #ifdef BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
-          std::cout<<BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_FILE<<':'<<__LINE__<<":result.parse="<<result<<";\n";
-        #endif//BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
+        #ifdef BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
+          std::cout<<BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE<<':'<<__LINE__<<":result.parse="<<result<<";\n";
+        #endif//BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
           if(result)
           {
               result=transform::post(to_attr,from_attr);
-            #ifdef BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
-              using ::operator<<;
-              std::cout<<BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_FILE<<':'<<__LINE__<<":result.post="<<result<<";\n";
+            #ifdef BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
+              std::cout<<BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE<<':'<<__LINE__<<":result.post="<<result<<";\n";
               std::cout<<":input="<<std::string(f,l)<<";\n";
-              std::cout<<":to_attr="<<to_attr<<";\n";
-            #endif//BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
+              //std::cout<<":to_attr="<<to_attr<<";\n";
+            #endif//BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
           }
           return result;
         }
@@ -150,21 +152,36 @@ struct transform_parser_attribute
         , Attribute& attr
         ) const
         {
-        ; return from_parser.parse(f,l,context,r_ctx,attr)
+        #if 1 && defined(BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE)
+          boost::trace_scope ts
+          ( stringify
+            ( BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE
+            , ':', __LINE__
+            , ':', __func__
+            )
+          );
+          std::cout<<":*this="<<demangle_fmt_type<transform_parser_attribute>()<<";\n";
+          std::cout<<":Attribute=\n"<<demangle_fmt_type<Attribute>()<<";\n";
+        #endif//BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
+        ; bool result=from_parser.parse(f,l,context,r_ctx,attr);
+        #if 1 && defined(BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE)
+          std::cout<<":result="<<result<<";\n"
+        #endif
+        ; return result;
         ;}
       transform_parser_attribute(FromParser p)
         : from_parser(p)
         {
-          #if 0 && defined(BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE)
+          #if 0 && defined(BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE)
             boost::trace_scope ts
             ( stringify
-              ( BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_FILE
+              ( BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE
               , ':', __LINE__
               , ':', __func__,"(FromParser p)"
               )
             );
             std::cout<<":*this="<<demangle_fmt_type<transform_parser_attribute>()<<";\n";
-          #endif//BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
+          #endif//BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
         }
   };
 struct ident_transform
@@ -193,16 +210,16 @@ struct transform_parser_attribute
       transform_parser_attribute(FromParser p)
         : from_parser(p)
         {
-          #if 0 && defined(BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE)
+          #if 0 && defined(BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE)
             boost::trace_scope ts
             ( stringify
-              ( BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_FILE
+              ( BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE
               , ':', __LINE__
               , ':', __func__,"(FromParser p)"
               )
             );
             std::cout<<":*this="<<demangle_fmt_type<transform_parser_attribute>()<<";\n";
-          #endif//BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
+          #endif//BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
         }
         template
         < typename Iterator
@@ -217,10 +234,10 @@ struct transform_parser_attribute
         , ToAttribute& to_attr
         ) const
         { 
-          #ifdef BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
+          #ifdef BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
             boost::trace_scope ts
               ( stringify
-                ( BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_FILE
+                ( BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE
                 , ':', __LINE__
                 , ':', __func__,"(,Ctx&,Rctx&,ToAttribute&)"
                 )
@@ -230,16 +247,15 @@ struct transform_parser_attribute
             std::cout<<":TransformTag="<<demangle_fmt_type<ident_transform>()<<";\n";
             std::cout<<":Ctx="<<demangle_fmt_type<Ctx>()<<";\n";
             std::cout<<":Rctx="<<demangle_fmt_type<Rctx>()<<";\n";
-          #endif//BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
+          #endif//BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
         ; bool result=from_parser.parse(f,l,context,r_ctx,to_attr)
-          #ifdef BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
-          ; std::cout<<BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_FILE<<':'<<__LINE__<<":result.parse="<<result<<";\n";
+          #ifdef BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
+          ; std::cout<<BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE<<':'<<__LINE__<<":result.parse="<<result<<";\n";
             std::cout<<":input="<<std::string(f,l)<<";\n";
-            #ifdef WORK_AROUND_DEBUG_CPP_TRACE
-              std::cout<<":to_attr=";
-              print_vec(std::cout,to_attr)<<";\n";
-            #endif
-          #endif//BOOST_SPIRIT_X3_CORE_MAKE_TRANSFORM_PARSER_TRACE
+            std::cout<<":to_attr=";
+            traits::print_attribute(std::cout,to_attr);
+            std::cout<<";\n";
+          #endif//BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE
         ; return result
         ;}
   };
@@ -249,15 +265,17 @@ struct transform_parser_attribute
   , typename TransformTag=transform_tag_default
   >
   auto
-make_transform_parser
+gen_transform_parser
   ( FromParser from_parser
   )
   {  return transform_parser_attribute<FromParser,ToAttribute,TransformTag>{from_parser};
   }
-//{the following copy&pasted with only minor modifications from sehe's 'as' 
+//{as_defn
+//the following copy&pasted with only minor modifications from sehe's 'as' 
 // alias template(https://en.cppreference.com/w/cpp/language/type_alias)
 // here:
-//  https://stackoverflow.com/questions/56819120/spirit-x3-how-to-get-attribute-type-to-match-rule-type?rq=1  
+//  https://stackoverflow.com/questions/56819120/spirit-x3-how-to-get-attribute-type-to-match-rule-type?rq=1
+//=========
       template
       < typename ToAttribute
       , typename TransformTag=transform_tag_default
@@ -266,11 +284,14 @@ make_transform_parser
     as_defn_type
       {
             template 
-            < typename Parser
+            < typename FromParser
             >
             constexpr auto 
-          operator[](Parser e) const 
-            { return x3::rule<TransformTag, ToAttribute> {} = e;
+          operator[](FromParser e) const 
+            { return 
+                x3::rule<TransformTag, ToAttribute> {} = e
+                //rule_definition<TransformTag,FromParser,ToAttribute>
+                ;
             }
       };
         template
@@ -284,35 +305,7 @@ make_transform_parser
         > 
     as_defn
       ;  
-      template 
-      < typename TransformTag
-      >
-      struct 
-    as_parser_type 
-      {
-            template <typename Parser>
-            constexpr auto 
-          operator[](Parser e) const 
-            { using ToAttribute=typename attribute_of<Parser,unused_type>::type;
-              return 
-                make_transform_parser
-                < ToAttribute
-                , Parser
-                , TransformTag
-                >
-                ( e
-                );
-            }
-      };
-        template
-        < typename TransformTag=transform_tag_default
-        >
-        static inline constexpr 
-      as_parser_type
-        < TransformTag
-        > 
-    as_parser
-      ;  
+//}as_defn
       template 
       < typename ToAttribute
       , typename TransformTag=transform_tag_default
@@ -323,8 +316,20 @@ make_transform_parser
             template <typename Parser>
             constexpr auto 
           operator[](Parser e) const 
-            { return 
-                make_transform_parser
+            { 
+            #if 0 && defined(BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_TRACE)
+              boost::trace_scope ts
+                ( stringify
+                  ( BOOST_SPIRIT_X3_CORE_GEN_TRANSFORM_PARSER_FILE
+                  , ':', __LINE__
+                  , ':', __func__,"(Parser e)"
+                  )
+                );
+              std::cout<<":ToAttribute=\n"<<demangle_fmt_type<ToAttribute>()<<";\n";
+              std::cout<<":Parser=\n"<<demangle_fmt_type<Parser>()<<";\n";
+            #endif
+              return 
+                gen_transform_parser
                 < ToAttribute
                 , Parser
                 , TransformTag
@@ -354,7 +359,7 @@ make_transform_parser
             constexpr auto 
           operator[](Parser e) const 
             { return 
-                make_transform_parser
+                gen_transform_parser
                 < ToAttribute
                 , Parser
                 , ident_transform
@@ -372,23 +377,26 @@ make_transform_parser
         > 
     as_ident
       ;  
+      template
+      < typename TransformTag=ident_transform
+      >
       struct 
     as_aof_ident_type 
       {
-            template <typename Parser>
+            template <typename FromParser>
             constexpr auto 
-          operator[](Parser e) const 
-            { using to_attribute=typename
+          operator[](FromParser e) const 
+            { using ToAttribute=typename
                 attribute_of
-                < Parser
+                < FromParser
                 , x3::unused_type
                 >::type
                 ;
               return 
-                make_transform_parser
-                < to_attribute
-                , Parser
-                , ident_transform
+                gen_transform_parser
+                < ToAttribute
+                , FromParser
+                , TransformTag
                 >
                 ( e
                 );

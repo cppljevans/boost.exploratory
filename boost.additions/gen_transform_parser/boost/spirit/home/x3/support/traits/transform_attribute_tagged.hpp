@@ -54,61 +54,7 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
       >
       struct 
     transform_attribute_tagged
-    #if 1
       ;
-    #else
-      {
-        using type=Transformed;
-
-      #if defined(BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE)
-        static void trace_tmpl(int line, std::string func="trace_tmpl")
-        {
-            std::cout
-              <<stringify
-                ( BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_FILE
-                , ':', __LINE__
-                , ":called from:", line
-                , ':', func
-                )
-              <<"\n";
-              ;
-            std::cout<<":Exposed=\n"<<demangle_type<Exposed>()<<";\n";
-            std::cout<<":Transformed=\n"<<demangle_type<Transformed>()<<";\n";
-            std::cout<<":TransformTag=\n"<<demangle_type<TransformTag>()<<";\n";
-            std::cout<<std::flush;
-        }
-      #endif//defined(BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE)
-      
-            static 
-          type 
-        pre
-          ( Exposed&
-          ) 
-          { 
-          #if defined(BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE)
-            trace_tmpl(__LINE__,__func__);
-          #endif
-            return type(); 
-          }
-            static 
-          auto
-        post
-          ( Exposed& exposed
-          , Transformed const& transformed
-          )
-          {
-          #if defined(BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE)
-            trace_tmpl(__LINE__,__func__);
-          #endif
-          //#define BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_SKIP_MOVE_TO
-          #if defined(BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_SKIP_MOVE_TO)
-          #else
-            traits::move_to(transformed, exposed);
-          #endif
-            return true;
-          }
-      };
-    #endif
       template
       < typename Exposed
       , typename Transformed
@@ -119,9 +65,6 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
       < Exposed
       , Transformed
       , rule_external_id<RuleId>
-        //this is used for "external" transformation attribute passed to
-        //the rule's parser and the attribute declared in the rule's type,
-        //a.k.a. the rule's requied type.
       >
       : transform_attribute<Exposed,Transformed,x3::parser_id>
       {
@@ -136,38 +79,47 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
       < Exposed
       , Transformed
       , rule_internal_id<RuleId>
-        //this is used for "internal" transformation between
-        //a rule's attribute(Exposed) and the attribute of the rule's rhs(Transformed).
+        //This is used for "internal" transformation between
+        //a rules attribute(Exposed) and the attribute of the rule's rhs(Transformed).
+        //
+        //This default implementation does, in effect, nothing.
       >
-      : transform_attribute<Exposed,Transformed,x3::parser_id>
       {
-        using super_t=transform_attribute<Exposed,Transformed,x3::parser_id>;
-      #ifdef USE_TRANSFORM_ATTRIBUTE_TAGGED_INHERITED
-            static
-          template
-          < typename Rctx
-          > 
-          auto 
-        post
-          ( Exposed& exposed
-          , Transformed&& transformed
-          , Rctx&
-          )
-          { super_t::post(exposed,transformed)
+        using type=Exposed&;
+        type pre(Exposed& exposed)
+          { 
+        #ifdef BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE
+          ; trace_scope ts
+            ( stringify
+              ( BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_FILE
+              , ':'
+              , __LINE__
+              , ':'
+              , __func__
+              )
+            )
+          ; std::cout<<":Exposed=\n"<<demangle_fmt_type<Exposed>()<<";\n"
+        #endif//BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE
+          ; return exposed
+          ;}
+        auto post(Exposed& exposed, Exposed& transformed)
+          { 
+        #ifdef BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE
+          ; trace_scope ts
+            ( stringify
+              ( BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_FILE
+              , ':'
+              , __LINE__
+              , ':'
+              , __func__
+              )
+            )
+          ; std::cout<<":Exposed&=\n"<<demangle_fmt_type<Exposed>()<<";\n"
+          ; std::cout<<":Transformed&=\n"<<demangle_fmt_type<Transformed>()<<";\n"
+        #endif//BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE
           ; return true
           ;}
-      #else
-            static 
-          auto 
-        post
-          ( Exposed& exposed
-          , Transformed&& transformed
-          )
-          { super_t::post(exposed,transformed)
-          ; return true
-          ;}
-      #endif//USE_TRANSFORM_ATTRIBUTE_TAGGED_INHERITED
-      };
+      ;};
 }}}}
 
 #endif
