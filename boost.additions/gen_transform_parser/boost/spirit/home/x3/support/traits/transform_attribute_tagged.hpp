@@ -81,7 +81,9 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
       
             static 
           type 
-        pre(Exposed&) 
+        pre
+          ( Exposed&
+          ) 
           { 
           #if defined(BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE)
             trace_tmpl(__LINE__,__func__);
@@ -90,7 +92,10 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
           }
             static 
           auto
-        post(Exposed& exposed, Transformed const& transformed)
+        post
+          ( Exposed& exposed
+          , Transformed const& transformed
+          )
           {
           #if defined(BOOST_SPIRIT_X3_TRAITS_TRANSFORM_ATTRIBUTE_TAGGED_TRACE)
             trace_tmpl(__LINE__,__func__);
@@ -114,6 +119,9 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
       < Exposed
       , Transformed
       , rule_external_id<RuleId>
+        //this is used for "external" transformation attribute passed to
+        //the rule's parser and the attribute declared in the rule's type,
+        //a.k.a. the rule's requied type.
       >
       : transform_attribute<Exposed,Transformed,x3::parser_id>
       {
@@ -129,15 +137,36 @@ namespace boost { namespace spirit { namespace x3 { namespace traits
       , Transformed
       , rule_internal_id<RuleId>
         //this is used for "internal" transformation between
-        //a rules attribute(Exposed) and the attribute of the rule's rhs(Transformed).
+        //a rule's attribute(Exposed) and the attribute of the rule's rhs(Transformed).
       >
       : transform_attribute<Exposed,Transformed,x3::parser_id>
       {
         using super_t=transform_attribute<Exposed,Transformed,x3::parser_id>;
-        static auto post(Exposed& exposed, Transformed&& transformed)
+      #ifdef USE_TRANSFORM_ATTRIBUTE_TAGGED_INHERITED
+            static
+          template
+          < typename Rctx
+          > 
+          auto 
+        post
+          ( Exposed& exposed
+          , Transformed&& transformed
+          , Rctx&
+          )
           { super_t::post(exposed,transformed)
           ; return true
           ;}
+      #else
+            static 
+          auto 
+        post
+          ( Exposed& exposed
+          , Transformed&& transformed
+          )
+          { super_t::post(exposed,transformed)
+          ; return true
+          ;}
+      #endif//USE_TRANSFORM_ATTRIBUTE_TAGGED_INHERITED
       };
 }}}}
 
