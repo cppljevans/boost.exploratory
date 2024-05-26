@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Need for "RHS" transform_attribute</title>
+</head>
+<body>
+<h1>Existing use of "external" transform_attribute</h1>
+<p>The transform_attribute class is used in 2 places</p>
+<ol>
+  <li><a href="https://github.com/boostorg/spirit/blob/master/include/boost/spirit/home/x3/nonterminal/rule.hpp#L149">within <code>rule::parse
+  function</code></a></li>
+    <p>
+    The purpose here is to transform the passed-in, or <b>external</b>,
+    attribute type, <code>Attribute_</code>, to the
+    rule's attribute, <code>attribute_type</code>.
+    </p>
+  <li><a href="https://github.com/boostorg/spirit/blob/develop/include/boost/spirit/home/x3/nonterminal/detail/rule.hpp#L306">within <code>call_rule_definition
+  function</code></a></li>
+    <p>
+    The purpose here is the very same as the purpose above.  The only
+    difference is the name of the types.  Here, instead of the
+    passed-in attribute type being named <code>Attribute_</code>, the name
+    is <code>ActualAttribute</code>, and instead of the rule's attribute
+    being named <code>attribute_type</code>, the
+    name is simply <code>Attribute</code>.
+    </p>
+</ol>
+<h1>Proposed use of "RHS" transform_attribute</h1>
+
+  <p>
+  Currently, the x3 docs require that the rule attribute is
+  "compatible" with the RHS
+  attribute <a href="https://ciere.com/cppnow15/using_x3.pdf">(page
+  96)</a>.
+  </p>
+  
+  <p>
+  The propsed <b>RHS</b> transform would relieve the end-user of this
+  compatibility constraint by transforming a possibly incompatible
+  rule attribute to the <b>RHS</b>'s attribute.
+  </p>
+  
+  <p>If such a RHS transform_attribute's <code>post</code> returns
+  a <code>bool</code> value, then it could be used to replace some
+  semantic actions and changes to the <a href="https://github.com/cppljevans/boost.exploratory/blob/main/boost.replacements/examples/realworld/spirit-issues/issue749.x3-html/coliru_sehe-debug-simple-compare.cpp#L133"><code>context</code></a>, as
+  shown <a href="https://github.com/cppljevans/boost.exploratory/blob/main/boost.replacements/examples/realworld/spirit-issues/issue749.x3-html/coliru_sehe-debug-simple-compare.cpp#L318">here</a>.
+  </p>
+  
+  <p>This RHS transform_attribute use could be placed somewhere after
+  the <b>external</b> transform attribute use, possibly in
+  the <code>call_rule_defintion</code> body just
+  before <code>parse_rhs</code> call <a href="https://github.com/boostorg/spirit/blob/develop/include/boost/spirit/home/x3/nonterminal/detail/rule.hpp#L328">here</a>.
+  </p>
+  
+  
+</body>
+</html>
